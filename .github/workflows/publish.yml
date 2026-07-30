@@ -1,0 +1,60 @@
+name: Publish Translated Videos
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run publish script
+        working-directory: scripts
+        env:
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          YOUTUBE_ES_CLIENT_ID: ${{ secrets.YOUTUBE_ES_CLIENT_ID }}
+          YOUTUBE_ES_CLIENT_SECRET: ${{ secrets.YOUTUBE_ES_CLIENT_SECRET }}
+          YOUTUBE_ES_REFRESH_TOKEN: ${{ secrets.YOUTUBE_ES_REFRESH_TOKEN }}
+        run: python publish_pending.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A data/processed.json data/thumbnails
+          git diff --cached --quiet && echo "Змін немає" && exit 0
+          git commit -m "chore: update processed.json after publish [skip ci]"
+          # Два workflow комітять у ті самі файли — можливий race при push.
+          # Кілька спроб з rebase на випадок, якщо інший job уже запушив.
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "Push не вдався (спроба $i), роблю rebase..."
+            git pull --rebase --autostash origin ${GITHUB_REF_NAME} || true
+            sleep $((i * 5))
+          done
+          echo "Не вдалось запушити стан після 5 спроб" >&2
+          exit 1
