@@ -1,0 +1,66 @@
+name: Check & Process New Videos
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-and-process
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ffmpeg (потрібен yt-dlp для merge відео/аудіо)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run processing script
+        working-directory: scripts
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          SOURCE_CHANNEL_HANDLE: "@GlavredTV"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # 0 = вимкнено. Постав 1080, щоб зменшувати файл перед передачею.
+          TRANSCODE_MAX_HEIGHT: "0"
+          FETCH_TIMEOUT_SECONDS: "2700"
+        run: python process_new_video.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed.json data/thumbnails
+          git diff --cached --quiet && echo "Змін немає" && exit 0
+          git commit -m "chore: update processed.json [skip ci]"
+          # Два workflow комітять у ті самі файли — можливий race при push.
+          # Кілька спроб з rebase на випадок, якщо інший job уже запушив.
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "Push не вдався (спроба $i), роблю rebase..."
+            git pull --rebase --autostash origin ${GITHUB_REF_NAME} || true
+            sleep $((i * 5))
+          done
+          echo "Не вдалось запушити стан після 5 спроб" >&2
+          exit 1
