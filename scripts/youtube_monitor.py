@@ -10,7 +10,8 @@
 import re
 from googleapiclient.discovery import build
 
-MAX_DURATION_SECONDS = 6 * 60  # поріг для HeyGen, узгоджено з користувачем
+# ТИМЧАСОВО піднято з 6*60 до 8*60 для тесту. Поверни на 6*60 після тесту.
+MAX_DURATION_SECONDS = 8 * 60
 
 
 def _parse_iso8601_duration(duration: str) -> int:
