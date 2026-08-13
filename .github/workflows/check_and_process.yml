@@ -37,6 +37,7 @@ jobs:
         working-directory: scripts
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
           SOURCE_CHANNEL_HANDLE: "@GlavredTV"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
