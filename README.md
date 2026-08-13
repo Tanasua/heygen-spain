@@ -1,3 +1,38 @@
+heygenglavredTVspanish_bot
+
+TELEGRAM_BOT_TOKEN
+8974925773:AAHxWoCHdsT-wq1WGiqw6yfqWEFzLKZG4cw
+
+https://api.telegram.org/bot8974925773:AAHxWoCHdsT-wq1WGiqw6yfqWEFzLKZG4cw/getUpdates
+
+TELEGRAM_CHAT_ID
+129316966
+
+
+OPENAI_API_KEY
+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
+
+
+YOUTUBE_API_KEY
+AIzaSyBBJSCzgvotUfH80lTbyW0EsT_Vk2tmozs
+
+
+HEYGEN_API_KEY
+sk_V2_hgu_kcy4Nv4LS9v_nVmgxtCdapXIM0ijGBjyzU4HFo5nbeNY
+
+
+
+YOUTUBE_ES_CLIENT_ID
+1059103484124-7ikjqu863085bi9o19t177bn9ihpfhmg.apps.googleusercontent.com
+
+YOUTUBE_ES_CLIENT_SECRET
+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
+
+
+
+YOUTUBE_ES_REFRESH_TOKEN
+1//04DolpXBiUiRKCgYIARAAGAQSNwF-L9IrDnatYaH0gBMb11oCMj6Hu66UxMtTBh0MQmWgwwADlQiddsC3i2oQu0MA2gSJAuXhUks
+
 # Автоматизація перекладу відео @GlavredTV → @AHORAMISMO-b5e
 
 ## Що робить система
