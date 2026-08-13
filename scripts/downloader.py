@@ -5,6 +5,22 @@
 import os
 import subprocess
 
+# YouTube блокує завантаження з датацентр-IP (GitHub Actions) як "підозрілі".
+# Обхід — передавати реальні cookies залогіненого акаунта через --cookies.
+# Вміст файлу cookies.txt (формат Netscape) кладеться в GitHub Secret YOUTUBE_COOKIES.
+COOKIES_ENV_VAR = "YOUTUBE_COOKIES"
+COOKIES_PATH = "/tmp/yt_cookies.txt"
+
+
+def _prepare_cookies_file() -> str | None:
+    """Пише cookies з env у тимчасовий файл. Повертає шлях або None, якщо секрет не заданий."""
+    cookies_content = os.environ.get(COOKIES_ENV_VAR)
+    if not cookies_content:
+        return None
+    with open(COOKIES_PATH, "w", encoding="utf-8") as f:
+        f.write(cookies_content)
+    return COOKIES_PATH
+
 
 def download_video(video_url: str, output_dir: str, video_id: str) -> str:
     """
@@ -19,8 +35,13 @@ def download_video(video_url: str, output_dir: str, video_id: str) -> str:
         "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
         "-o", output_template,
-        video_url,
     ]
+
+    cookies_path = _prepare_cookies_file()
+    if cookies_path:
+        cmd += ["--cookies", cookies_path]
+
+    cmd.append(video_url)
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
