@@ -30,5 +30,11 @@
     "duration_seconds": 939,
     "created_at": "2026-08-13T19:32:50.021857+00:00",
     "updated_at": "2026-08-13T19:32:50.021871+00:00"
+  },
+  "28r4gz4OCKs": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=28r4gz4OCKs:\nWARNING: [youtube] 28r4gz4OCKs: n challenge solving failed: Some formats may be missing. Ensure you have a supported JavaScript runtime and challenge solver script distribution installed. Review any warnings presented before this message. For more details, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS\nWARNING: Only images are available for download. use --list-formats to see them\nERROR: [youtube] 28r4gz4OCKs: Requested format is not available. Use --list-formats for a list of available formats\n",
+    "created_at": "2026-08-13T19:58:36.165508+00:00",
+    "updated_at": "2026-08-13T19:58:36.165529+00:00"
   }
 }
