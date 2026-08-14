@@ -168,5 +168,13 @@
     "duration_seconds": 837,
     "created_at": "2026-08-14T14:18:31.779514+00:00",
     "updated_at": "2026-08-14T14:18:31.779528+00:00"
+  },
+  "hGBv3UrqGTo": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "ЭКСПОРТ ЗЕРНА И НЕФТИ ОПРАВЛЕН В НОКАУТ! Порт Новороссийска полностью парализован!",
+    "duration_seconds": 793,
+    "created_at": "2026-08-14T15:27:22.511427+00:00",
+    "updated_at": "2026-08-14T15:27:22.511446+00:00"
   }
 }
