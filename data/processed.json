@@ -42,5 +42,16 @@
     "created_at": "2026-08-13T20:06:55.458560+00:00",
     "updated_at": "2026-08-13T20:24:38.878503+00:00",
     "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
+  },
+  "5X3sJ9h8eSU": {
+    "status": "translating",
+    "title_original": "НАТО не хватает рекет?! Проблема Patriot — РАСКРЫТА!",
+    "duration_seconds": 214,
+    "heygen_job_id": "18f472540c4e409c8092745372e23342-es",
+    "es_title": "¡ALERTA! ¿OTRA VEZ SIN MISILES? LA CRISIS DEL PATRIOT EN LA OTAN EXPUESTA",
+    "es_description": "Revelamos la preocupante escasez de misiles Patriot en la OTAN. ¿Qué significa esto para la defensa de Ucrania? Todos los detalles y reacciones oficiales, ¡no te lo pierdas! #Ucrania #OTAN #Patriot #GuerraEnEuropa",
+    "thumbnail_path": "data/thumbnails/5X3sJ9h8eSU.jpg",
+    "created_at": "2026-08-14T05:19:46.063481+00:00",
+    "updated_at": "2026-08-14T05:19:46.063494+00:00"
   }
 }
