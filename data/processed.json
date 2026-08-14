@@ -212,5 +212,19 @@
     "duration_seconds": 858,
     "created_at": "2026-08-14T18:25:44.933588+00:00",
     "updated_at": "2026-08-14T18:25:44.933602+00:00"
+  },
+  "Sqq4vDDUWAM": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=Sqq4vDDUWAM:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] Sqq4vDDUWAM: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
+    "created_at": "2026-08-14T19:29:00.338127+00:00",
+    "updated_at": "2026-08-14T19:29:00.338142+00:00"
+  },
+  "CpBYKY8Jc-0": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "НАЧАЛОСЬ?! ЭКСТРЕННО из Беларуси! РФ готовит наступление!",
+    "duration_seconds": 575,
+    "created_at": "2026-08-14T19:29:00.886432+00:00",
+    "updated_at": "2026-08-14T19:29:00.886444+00:00"
   }
 }
