@@ -102,5 +102,17 @@
     "duration_seconds": 875,
     "created_at": "2026-08-14T09:35:10.883037+00:00",
     "updated_at": "2026-08-14T09:35:10.883049+00:00"
+  },
+  "w8M63CkCx8Q": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=w8M63CkCx8Q:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] w8M63CkCx8Q: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
+    "created_at": "2026-08-14T10:56:40.249269+00:00",
+    "updated_at": "2026-08-14T10:56:40.249288+00:00"
+  },
+  "ZcUP9WCe6A0": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=ZcUP9WCe6A0:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] ZcUP9WCe6A0: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
+    "created_at": "2026-08-14T10:56:42.190143+00:00",
+    "updated_at": "2026-08-14T10:56:42.190159+00:00"
   }
 }
