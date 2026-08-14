@@ -144,5 +144,29 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=rSYf9iqKoGc:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] rSYf9iqKoGc: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-08-14T12:59:55.683468+00:00",
     "updated_at": "2026-08-14T12:59:55.683479+00:00"
+  },
+  "sgJBa3-IZmY": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "ПУТИН ПРОИГРЫВАЕТ ВОЙНУ БПЛА! Отсутствие инженеров и воровство доконали ВПК России!",
+    "duration_seconds": 910,
+    "created_at": "2026-08-14T14:18:30.947280+00:00",
+    "updated_at": "2026-08-14T14:18:30.947301+00:00"
+  },
+  "S8B5XbaJ70Y": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "Вы это СЛЫШАЛИ? Япония ЖЕСТКО обратилась к Путину - СРОЧНОЕ заявление. Медведев набросился на Токио.",
+    "duration_seconds": 735,
+    "created_at": "2026-08-14T14:18:31.463084+00:00",
+    "updated_at": "2026-08-14T14:18:31.463099+00:00"
+  },
+  "TU08MUmH1v0": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "ПУТИН ПОГОНИТ В ОКОПЫ СОТНИ ТЫСЯЧ! В РФ силовики силой заталкивают мужчин в военкоматы!",
+    "duration_seconds": 837,
+    "created_at": "2026-08-14T14:18:31.779514+00:00",
+    "updated_at": "2026-08-14T14:18:31.779528+00:00"
   }
 }
