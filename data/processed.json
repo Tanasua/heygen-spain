@@ -370,5 +370,11 @@
     "duration_seconds": 686,
     "created_at": "2026-08-16T18:23:57.282173+00:00",
     "updated_at": "2026-08-16T18:23:57.282191+00:00"
+  },
+  "B-djKCGWR7Y": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=B-djKCGWR7Y:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] B-djKCGWR7Y: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
+    "created_at": "2026-08-16T18:56:10.782275+00:00",
+    "updated_at": "2026-08-16T18:56:10.782295+00:00"
   }
 }
