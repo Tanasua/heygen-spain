@@ -302,5 +302,13 @@
     "duration_seconds": 932,
     "created_at": "2026-08-16T07:28:43.117607+00:00",
     "updated_at": "2026-08-16T07:28:43.117624+00:00"
+  },
+  "qUPcvJRqHw4": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "СРОЧНО из Киева! Украина вернет ЯДЕРНОЕ ОРУЖИЕ!",
+    "duration_seconds": 522,
+    "created_at": "2026-08-16T09:28:17.008957+00:00",
+    "updated_at": "2026-08-16T09:28:17.008980+00:00"
   }
 }
