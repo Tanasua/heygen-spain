@@ -129,11 +129,16 @@ def transcribe(client: OpenAI, wav_path: str) -> tuple[str, list[dict]]:
     return language, segments
 
 
-def translate_segments(client: OpenAI, segments: list[dict], target_language: str = "es") -> list[str]:
-    """Перекладає тексти сегментів одним викликом, зберігаючи порядок і кількість."""
+# Дуже нарізаний монтаж (>100 коротких реплік) в одному запиті до GPT іноді
+# губить/зливає пункти списку — перевірено на реальному відео (225
+# сегментів -> 220 перекладів). Менші пачки суттєво надійніші.
+TRANSLATE_BATCH_SIZE = 40
+
+
+def _translate_batch(client: OpenAI, batch: list[dict], target_language: str) -> list[str]:
     import json
 
-    numbered = [{"i": i, "text": seg["text"]} for i, seg in enumerate(segments)]
+    numbered = [{"i": i, "text": seg["text"]} for i, seg in enumerate(batch)]
 
     system_prompt = (
         "Eres un traductor profesional de subtítulos/doblaje. Traduces del idioma "
@@ -144,7 +149,8 @@ def translate_segments(client: OpenAI, segments: list[dict], target_language: st
     user_prompt = (
         "Traduce cada elemento de esta lista al español. Devuelve ÚNICAMENTE un "
         "JSON con la clave 'translations': un array de strings, EXACTAMENTE en el "
-        "mismo orden y con la misma cantidad de elementos que la entrada.\n\n"
+        "mismo orden y con la misma cantidad de elementos que la entrada "
+        f"({len(batch)} elementos, ni uno más ni uno menos).\n\n"
         f"Entrada:\n{json.dumps(numbered, ensure_ascii=False)}"
     )
 
@@ -160,12 +166,27 @@ def translate_segments(client: OpenAI, segments: list[dict], target_language: st
 
     data = json.loads(response.choices[0].message.content)
     translations = data.get("translations")
-    if not isinstance(translations, list) or len(translations) != len(segments):
+    if not isinstance(translations, list) or len(translations) != len(batch):
         raise DubError(
             f"GPT повернув {len(translations) if isinstance(translations, list) else 'не список'} "
-            f"перекладів замість {len(segments)}"
+            f"перекладів замість {len(batch)} (пачка)"
         )
     return [str(t) for t in translations]
+
+
+def translate_segments(client: OpenAI, segments: list[dict], target_language: str = "es") -> list[str]:
+    """Перекладає тексти сегментів пачками по TRANSLATE_BATCH_SIZE, з одною
+    повторною спробою на пачку у разі розбіжності кількості."""
+    translations: list[str] = []
+    for start in range(0, len(segments), TRANSLATE_BATCH_SIZE):
+        batch = segments[start:start + TRANSLATE_BATCH_SIZE]
+        try:
+            batch_translations = _translate_batch(client, batch, target_language)
+        except DubError:
+            print(f"[dub][WARN] пачка {start}-{start + len(batch)} невдала, повторюю спробу")
+            batch_translations = _translate_batch(client, batch, target_language)
+        translations.extend(batch_translations)
+    return translations
 
 
 def _build_voice_reference(wav_path: str, segments: list[dict], out_path: str) -> str:
