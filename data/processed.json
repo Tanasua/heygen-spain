@@ -456,5 +456,13 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=5JcM7ygaHzI:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] 5JcM7ygaHzI: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-08-17T17:24:18.832738+00:00",
     "updated_at": "2026-08-17T17:24:18.832760+00:00"
+  },
+  "DtEpuXpcyYY": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "ЭКСТРЕННО из Польши! СИКОРСКИЙ БЬЕТ ТРЕВОГУ! Новая тактика РФ!",
+    "duration_seconds": 888,
+    "created_at": "2026-08-17T17:55:23.431662+00:00",
+    "updated_at": "2026-08-17T17:55:23.431677+00:00"
   }
 }
