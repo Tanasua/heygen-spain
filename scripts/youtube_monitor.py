@@ -10,8 +10,11 @@
 import re
 from googleapiclient.discovery import build
 
-# ТИМЧАСОВО піднято з 6*60 до 8*60 для тесту. Поверни на 6*60 після тесту.
-MAX_DURATION_SECONDS = 8 * 60
+# Ліміт для HeyGen-шляху (precision mode дорожчає й повільнішає з довжиною
+# відео). Для DUB_PROVIDER=inworld застосовується окремий, більший ліміт
+# (INWORLD_MAX_DURATION_SECONDS у process_new_video.py) — Whisper/GPT/Inworld
+# TTS не мають того самого обмеження.
+MAX_DURATION_SECONDS = 6 * 60
 
 
 def _parse_iso8601_duration(duration: str) -> int:
@@ -87,5 +90,5 @@ def get_latest_videos(api_key: str, channel_id: str = None, handle: str = None,
     return results
 
 
-def is_short_enough(duration_seconds: int) -> bool:
-    return duration_seconds < MAX_DURATION_SECONDS
+def is_short_enough(duration_seconds: int, max_seconds: int = MAX_DURATION_SECONDS) -> bool:
+    return duration_seconds < max_seconds

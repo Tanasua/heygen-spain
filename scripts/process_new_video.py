@@ -66,6 +66,13 @@ elif not HEYGEN_API_KEY:
 FETCH_TIMEOUT_SECONDS = int(os.environ.get("FETCH_TIMEOUT_SECONDS", 45 * 60))
 # Перекодування для зменшення файлу: 0 = вимкнено, інакше макс. висота (1080).
 TRANSCODE_MAX_HEIGHT = int(os.environ.get("TRANSCODE_MAX_HEIGHT", 0))
+# Ліміт довжини для DUB_PROVIDER=inworld — не пов'язаний з обмеженням HeyGen
+# (youtube_monitor.MAX_DURATION_SECONDS), бо Whisper/GPT/Inworld TTS довге
+# відео просто довше обробляють, без якісних чи цінових стрибків HeyGen.
+INWORLD_MAX_DURATION_SECONDS = int(os.environ.get("INWORLD_MAX_DURATION_SECONDS", 30 * 60))
+# 0 = без обмеження. Корисно для контрольованого тесту (обробити 1 відео,
+# а не всі нові одразу).
+MAX_VIDEOS_PER_RUN = int(os.environ.get("MAX_VIDEOS_PER_RUN", 0))
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 WORK_DIR = os.path.join(BASE_DIR, "tmp")
@@ -213,11 +220,14 @@ def process_video(video: dict, openai_client: OpenAI) -> None:
     title = video["title"]
     duration = video["duration_seconds"]
 
-    if not youtube_monitor.is_short_enough(duration):
-        state_manager.mark_skipped(video_id, title, duration, reason="too_long_for_heygen")
+    max_duration = INWORLD_MAX_DURATION_SECONDS if DUB_PROVIDER == "inworld" \
+        else youtube_monitor.MAX_DURATION_SECONDS
+    if not youtube_monitor.is_short_enough(duration, max_duration):
+        reason = "too_long_for_inworld" if DUB_PROVIDER == "inworld" else "too_long_for_heygen"
+        state_manager.mark_skipped(video_id, title, duration, reason=reason)
         telegram_notifier.notify_skipped(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
                                           title, video["url"], duration)
-        print(f"[SKIP] {video_id} — задовге ({duration}s)")
+        print(f"[SKIP] {video_id} — задовге ({duration}s > {max_duration}s)")
         return
 
     print(f"[PROCESS] {video_id} — {title} (DUB_PROVIDER={DUB_PROVIDER})")
@@ -265,7 +275,12 @@ def main():
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
     # Від найстарішого до найновішого — щоб публікації йшли в природному порядку
-    for video in reversed(new_videos):
+    ordered = list(reversed(new_videos))
+    if MAX_VIDEOS_PER_RUN > 0:
+        ordered = ordered[:MAX_VIDEOS_PER_RUN]
+        print(f"[LIMIT] MAX_VIDEOS_PER_RUN={MAX_VIDEOS_PER_RUN} — обробляю лише {len(ordered)}")
+
+    for video in ordered:
         process_video(video, openai_client)
 
 
