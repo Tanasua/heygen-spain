@@ -434,5 +434,21 @@
     "duration_seconds": 1058,
     "created_at": "2026-08-17T15:22:18.444394+00:00",
     "updated_at": "2026-08-17T15:22:18.444414+00:00"
+  },
+  "OM2bNm7BB-U": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "ПРОРЫВА НЕТ! ВСУ сорвали планы Кремля! РОССИЯ МЕНЯЕТ ТАКТИКУ!",
+    "duration_seconds": 661,
+    "created_at": "2026-08-17T16:56:25.005647+00:00",
+    "updated_at": "2026-08-17T16:56:25.005666+00:00"
+  },
+  "fIZt-NSCdUs": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "Мадяр СДЕЛАЛ ЭТО! Флот РФ —  В ОГНЕ! Пекло в Крыму!",
+    "duration_seconds": 1823,
+    "created_at": "2026-08-17T16:56:25.518962+00:00",
+    "updated_at": "2026-08-17T16:56:25.518972+00:00"
   }
 }
