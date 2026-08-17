@@ -3,7 +3,13 @@ name: Check & Process New Videos
 on:
   schedule:
     - cron: "*/30 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dub_provider:
+        description: "Провайдер дубляжу для цього ручного запуску"
+        type: choice
+        options: ["heygen", "inworld"]
+        default: "heygen"
 
 permissions:
   contents: write
@@ -49,7 +55,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           # "heygen" (ліп-синк, дорожче, асинхронно) або "inworld" (без
           # ліп-синку, дешевше, публікує одразу тут — див. README).
-          DUB_PROVIDER: "heygen"
+          # За розкладом (cron) завжди "heygen"; провайдер "inworld" можна
+          # обрати лише вручну через workflow_dispatch (кнопка Run workflow).
+          DUB_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.dub_provider || 'heygen' }}
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
           INWORLD_API_KEY: ${{ secrets.INWORLD_API_KEY }}
           # Потрібні тільки для DUB_PROVIDER=inworld (заливка на YouTube
