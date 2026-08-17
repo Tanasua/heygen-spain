@@ -174,9 +174,29 @@ def _translate_batch(client: OpenAI, batch: list[dict], target_language: str) ->
     return [str(t) for t in translations]
 
 
+def _translate_one(client: OpenAI, text: str, target_language: str) -> str:
+    """Переклад одного рядка окремим запитом — гарантовано 1:1, без ризику
+    злиття/втрати пунктів списку. Дорожче за пачку, тому лише як fallback."""
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[
+            {"role": "system", "content": (
+                "Eres un traductor profesional de subtítulos/doblaje. Traduces al "
+                "español neutro, manteniendo el tono y la longitud aproximada. "
+                "Responde ÚNICAMENTE con la traducción, sin comillas ni comentarios."
+            )},
+            {"role": "user", "content": text},
+        ],
+        temperature=0.3,
+    )
+    return response.choices[0].message.content.strip()
+
+
 def translate_segments(client: OpenAI, segments: list[dict], target_language: str = "es") -> list[str]:
-    """Перекладає тексти сегментів пачками по TRANSLATE_BATCH_SIZE, з одною
-    повторною спробою на пачку у разі розбіжності кількості."""
+    """Перекладає тексти сегментів пачками по TRANSLATE_BATCH_SIZE. Якщо
+    пачка двічі поспіль повертає не ту кількість (реально трапляється на
+    відео з дуже короткими сусідніми репліками) — перекладає її елемент за
+    елементом окремими запитами, де розбіжність кількості неможлива."""
     translations: list[str] = []
     for start in range(0, len(segments), TRANSLATE_BATCH_SIZE):
         batch = segments[start:start + TRANSLATE_BATCH_SIZE]
@@ -184,7 +204,13 @@ def translate_segments(client: OpenAI, segments: list[dict], target_language: st
             batch_translations = _translate_batch(client, batch, target_language)
         except DubError:
             print(f"[dub][WARN] пачка {start}-{start + len(batch)} невдала, повторюю спробу")
-            batch_translations = _translate_batch(client, batch, target_language)
+            try:
+                batch_translations = _translate_batch(client, batch, target_language)
+            except DubError:
+                print(f"[dub][WARN] пачка {start}-{start + len(batch)} невдала вдруге, "
+                      f"перекладаю по одному елементу")
+                batch_translations = [_translate_one(client, seg["text"], target_language)
+                                       for seg in batch]
         translations.extend(batch_translations)
     return translations
 
