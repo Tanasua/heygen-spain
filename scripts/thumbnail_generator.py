@@ -28,11 +28,12 @@ from PIL import Image
 
 CANVAS_SIZE = (1280, 720)  # стандарт YouTube 16:9
 
-# "1536x1024" — один з офіційно підтверджених прикладів розміру для
-# gpt-image-2 edit (1.5:1). Довільні розміри теж нібито дозволені (кратні
-# 16, ratio <= 3:1), але цей підтверджений документацією — надійніший
-# вибір. До 16:9 дотягуємо центральним кропом після генерації.
-GEN_SIZE = "1536x1024"
+# 1536x1024 (3:2, офіційний приклад з документації) обрізався до 16:9
+# центральним кропом 80px зверху/знизу — і зрізав нижній рядок напису,
+# який модель ставить у нижню третину (реальний баг, побачений на
+# першому опублікованому відео). "1568x896" — теж кратне 16, ratio 1.75
+# (майже 16:9=1.778) — залишає кроп ~7px замість 80px.
+GEN_SIZE = "1568x896"
 
 STYLE_PROMPT = """\
 Analiza esta imagen de referencia (miniatura original de un video de \
@@ -56,6 +57,12 @@ composición (normalmente tercio inferior). El titular exacto es:
 
 "{headline}"
 
+IMPORTANTE — margen de seguridad: deja al menos un 8% del alto de la \
+imagen totalmente libre en el borde superior Y en el borde inferior (sin \
+texto, sin partes de caras, sin objetos clave pegados al borde) — esa \
+franja se recorta después para ajustar a 16:9, y cualquier elemento \
+pegado al borde quedará cortado.
+
 Contexto/tema del video (solo para ambientación, no agregues elementos \
 que no estén ya en la imagen): {scene_hint}
 
@@ -65,6 +72,8 @@ sin texto adicional aparte del titular indicado.\
 
 
 def _to_16_9(img: Image.Image) -> Image.Image:
+    """Дотягує до 16:9. Вертикальний кроп бере переважно зверху — заголовок
+    завжди в нижній третині, тож краще жертвувати верхом фону, ніж низом тексту."""
     target_ratio = CANVAS_SIZE[0] / CANVAS_SIZE[1]
     w, h = img.size
     current_ratio = w / h
@@ -74,7 +83,8 @@ def _to_16_9(img: Image.Image) -> Image.Image:
         img = img.crop((left, 0, left + new_w, h))
     elif current_ratio < target_ratio:
         new_h = round(w / target_ratio)
-        top = (h - new_h) // 2
+        removed = h - new_h
+        top = round(removed * 0.85)
         img = img.crop((0, top, w, top + new_h))
     return img.resize(CANVAS_SIZE)
 
