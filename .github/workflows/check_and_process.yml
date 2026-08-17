@@ -45,10 +45,19 @@ jobs:
           YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
           SOURCE_CHANNEL_HANDLE: "@GlavredTV"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # 0 = вимкнено. Постав 1080, щоб зменшувати файл перед передачею.
+          # "heygen" (ліп-синк, дорожче, асинхронно) або "inworld" (без
+          # ліп-синку, дешевше, публікує одразу тут — див. README).
+          DUB_PROVIDER: "heygen"
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+          INWORLD_API_KEY: ${{ secrets.INWORLD_API_KEY }}
+          # Потрібні тільки для DUB_PROVIDER=inworld (заливка на YouTube
+          # відбувається одразу тут, а не у Workflow 2).
+          YOUTUBE_ES_CLIENT_ID: ${{ secrets.YOUTUBE_ES_CLIENT_ID }}
+          YOUTUBE_ES_CLIENT_SECRET: ${{ secrets.YOUTUBE_ES_CLIENT_SECRET }}
+          YOUTUBE_ES_REFRESH_TOKEN: ${{ secrets.YOUTUBE_ES_REFRESH_TOKEN }}
+          # 0 = вимкнено. Постав 1080, щоб зменшувати файл перед передачею (тільки heygen-шлях).
           TRANSCODE_MAX_HEIGHT: "0"
           FETCH_TIMEOUT_SECONDS: "2700"
         run: python process_new_video.py

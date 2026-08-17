@@ -1,0 +1,350 @@
+"""
+DIY-дубляж без ліп-синку: Whisper (транскрипція) -> GPT (переклад) ->
+Inworld TTS (voice cloning + синтез) -> ffmpeg (тайм-стрейч і склейка доріжки) ->
+заміна аудіодоріжки в оригінальному відео.
+
+Навіщо: HeyGen precision mode (ліп-синк) коштує ~$4/хв через API. Якщо
+ліп-синк не потрібен, цей пайплан на кілька порядків дешевший (Whisper +
+GPT-переклад тексту + Inworld TTS), бо кожен компонент тарифікується окремо
+і без націнки турнкі-сервісу.
+
+Обмеження, які варто знати:
+- Немає ліп-синку — губи не збігаються з новим звуком.
+- Inworld API (endpoints /voices/v1/voices:clone і /tts/v1/voice, Basic-auth
+  заголовок "Authorization: Basic <API_KEY>") звірено з офіційними прикладами
+  на момент написання, але langCode для клонування голосу в документації
+  трапляється у двох форматах ("EN_US" і "ru"/"es"). Тут використовується
+  формат "ru"/"uk"/"es", підтверджений для Realtime TTS-2 — якщо Inworld
+  поверне 400 з описом іншого формату, виправте LANG_CODE_MAP і
+  DEFAULT_TARGET_LANG_CODE нижче.
+- Українську мову Inworld офіційно підтверджує лише як "ймовірно
+  experimental" (не в списку GA-мов) — якість клонування голосу з
+  українського джерела не гарантована.
+- Тайм-стрейч через ffmpeg atempo підганяє тривалість репліки під оригінал,
+  але за екстремальних відхилень (дуже стисла репліка) мова може звучати
+  прискорено/уповільнено помітно на слух.
+"""
+
+import base64
+import os
+import subprocess
+import wave
+
+SAMPLE_RATE = 24000
+INWORLD_BASE_URL = "https://api.inworld.ai"
+DEFAULT_MODEL_ID = "inworld-tts-1-max"
+
+# Whisper повертає повну назву мови ("russian", "ukrainian", ...).
+# Inworld TTS-2 GA-мови (підтверджено офіційно): en, zh, ja, ko, ru, it,
+# es, pt, fr, de, pl, nl, hi, he, ar. Українська — не в GA-списку.
+LANG_CODE_MAP = {
+    "russian": "ru",
+    "ukrainian": "uk",
+    "english": "en",
+}
+DEFAULT_SOURCE_LANG_CODE = "ru"
+TARGET_LANG_CODE_MAP = {"es": "es"}
+
+VOICE_REF_MIN_SECONDS = 6.0
+VOICE_REF_MAX_SECONDS = 14.0
+
+import requests
+from openai import OpenAI
+
+
+class DubError(RuntimeError):
+    pass
+
+
+def _run_ffmpeg(args: list[str], error_prefix: str) -> None:
+    cmd = ["ffmpeg", "-y"] + args
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise DubError(f"{error_prefix}:\n{result.stderr[-2000:]}")
+
+
+def _ffprobe_duration(path: str) -> float:
+    cmd = [
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", path,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise DubError(f"ffprobe помилка для {path}:\n{result.stderr[-1000:]}")
+    return float(result.stdout.strip())
+
+
+def _extract_audio_wav(video_path: str, out_path: str) -> None:
+    _run_ffmpeg(
+        ["-i", video_path, "-vn", "-ac", "1", "-ar", str(SAMPLE_RATE),
+         "-acodec", "pcm_s16le", out_path],
+        "ffmpeg помилка витягання аудіо",
+    )
+
+
+def transcribe(client: OpenAI, wav_path: str) -> tuple[str, list[dict]]:
+    """Повертає (мова_повна_назва, [{"start","end","text"}, ...])."""
+    with open(wav_path, "rb") as f:
+        resp = client.audio.transcriptions.create(
+            model="whisper-1", file=f, response_format="verbose_json",
+        )
+
+    language = getattr(resp, "language", "") or ""
+    raw_segments = getattr(resp, "segments", None) or []
+
+    segments = []
+    for s in raw_segments:
+        start = getattr(s, "start", None) if not isinstance(s, dict) else s.get("start")
+        end = getattr(s, "end", None) if not isinstance(s, dict) else s.get("end")
+        text = getattr(s, "text", None) if not isinstance(s, dict) else s.get("text")
+        text = (text or "").strip()
+        if text and start is not None and end is not None and end > start:
+            segments.append({"start": float(start), "end": float(end), "text": text})
+
+    return language, segments
+
+
+def translate_segments(client: OpenAI, segments: list[dict], target_language: str = "es") -> list[str]:
+    """Перекладає тексти сегментів одним викликом, зберігаючи порядок і кількість."""
+    import json
+
+    numbered = [{"i": i, "text": seg["text"]} for i, seg in enumerate(segments)]
+
+    system_prompt = (
+        "Eres un traductor profesional de subtítulos/doblaje. Traduces del idioma "
+        "original al español neutro, manteniendo el tono y la longitud aproximada "
+        "de cada frase (para que encaje en el mismo tiempo de habla). No añadas ni "
+        "quites información. No traduzcas el formato JSON, solo el campo 'text'."
+    )
+    user_prompt = (
+        "Traduce cada elemento de esta lista al español. Devuelve ÚNICAMENTE un "
+        "JSON con la clave 'translations': un array de strings, EXACTAMENTE en el "
+        "mismo orden y con la misma cantidad de elementos que la entrada.\n\n"
+        f"Entrada:\n{json.dumps(numbered, ensure_ascii=False)}"
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.3,
+    )
+
+    data = json.loads(response.choices[0].message.content)
+    translations = data.get("translations")
+    if not isinstance(translations, list) or len(translations) != len(segments):
+        raise DubError(
+            f"GPT повернув {len(translations) if isinstance(translations, list) else 'не список'} "
+            f"перекладів замість {len(segments)}"
+        )
+    return [str(t) for t in translations]
+
+
+def _build_voice_reference(wav_path: str, segments: list[dict], out_path: str) -> str:
+    """Вирізає ~6-14с чистої мови з початку для voice cloning. Повертає транскрипт цього шматка."""
+    start = segments[0]["start"]
+    end = start
+    used_texts = []
+    for seg in segments:
+        if seg["start"] - start > VOICE_REF_MAX_SECONDS:
+            break
+        end = seg["end"]
+        used_texts.append(seg["text"])
+        if end - start >= VOICE_REF_MIN_SECONDS:
+            break
+
+    _run_ffmpeg(
+        ["-i", wav_path, "-ss", str(start), "-to", str(end),
+         "-acodec", "pcm_s16le", "-ar", str(SAMPLE_RATE), "-ac", "1", out_path],
+        "ffmpeg помилка вирізання voice reference",
+    )
+    return " ".join(used_texts)[:1000]
+
+
+def _clone_voice(api_key: str, ref_path: str, transcript: str, lang_code: str, video_id: str) -> str:
+    with open(ref_path, "rb") as f:
+        audio_b64 = base64.b64encode(f.read()).decode("ascii")
+
+    payload = {
+        "displayName": f"dub-{video_id}",
+        "langCode": lang_code,
+        "voiceSamples": [{"audioData": audio_b64, "transcription": transcript}],
+        "description": "Auto voice clone для dub_pipeline (без ліп-синку)",
+        "tags": ["auto-dub"],
+        "audioProcessingConfig": {"removeBackgroundNoise": True},
+    }
+    headers = {"Authorization": f"Basic {api_key}", "Content-Type": "application/json"}
+
+    resp = requests.post(f"{INWORLD_BASE_URL}/voices/v1/voices:clone",
+                          json=payload, headers=headers, timeout=60)
+    if resp.status_code >= 400:
+        raise DubError(f"Inworld voice clone failed ({resp.status_code}): {resp.text}")
+
+    data = resp.json()
+    voice_id = (data.get("voice") or {}).get("voiceId") or data.get("voiceId")
+    if not voice_id:
+        raise DubError(f"Inworld не повернув voiceId: {data}")
+    return voice_id
+
+
+def _synthesize_segment(api_key: str, text: str, voice_id: str) -> bytes:
+    """Повертає сирі PCM16 mono семпли (без WAV-заголовка)."""
+    payload = {
+        "text": text,
+        "voiceId": voice_id,
+        "modelId": DEFAULT_MODEL_ID,
+        "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": SAMPLE_RATE},
+    }
+    headers = {"Authorization": f"Basic {api_key}", "Content-Type": "application/json"}
+
+    resp = requests.post(f"{INWORLD_BASE_URL}/tts/v1/voice",
+                          json=payload, headers=headers, timeout=60)
+    if resp.status_code >= 400:
+        raise DubError(f"Inworld TTS failed ({resp.status_code}): {resp.text}")
+
+    data = resp.json()
+    audio_content = data.get("audioContent") or data.get("result", {}).get("audioContent")
+    if not audio_content:
+        raise DubError(f"Inworld TTS не повернув audioContent: {data}")
+    return base64.b64decode(audio_content)
+
+
+def _write_wav(path: str, pcm_bytes: bytes) -> None:
+    with wave.open(path, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(SAMPLE_RATE)
+        wf.writeframes(pcm_bytes)
+
+
+def _read_wav_frames(path: str) -> bytes:
+    with wave.open(path, "rb") as wf:
+        return wf.readframes(wf.getnframes())
+
+
+def _atempo_chain(factor: float) -> str:
+    """ffmpeg atempo приймає лише 0.5-2.0 за один фільтр — розкладаємо на ланцюжок."""
+    if factor <= 0:
+        return "atempo=1.0"
+    filters = []
+    remaining = factor
+    while remaining > 2.0:
+        filters.append("atempo=2.0")
+        remaining /= 2.0
+    while remaining < 0.5:
+        filters.append("atempo=0.5")
+        remaining /= 0.5
+    filters.append(f"atempo={remaining:.6f}")
+    return ",".join(filters)
+
+
+def _fit_to_duration(pcm_bytes: bytes, target_duration: float, work_dir: str, tag: str) -> bytes:
+    """Тайм-стрейч синтезованого сегмента під точну тривалість оригінальної репліки."""
+    target_samples = max(1, round(target_duration * SAMPLE_RATE))
+
+    current_duration = len(pcm_bytes) / 2 / SAMPLE_RATE
+    if current_duration <= 0:
+        return b"\x00\x00" * target_samples
+
+    factor = current_duration / target_duration
+    # Майже без розтягування - не ганяємо через ffmpeg дарма.
+    if 0.97 <= factor <= 1.03:
+        stretched = pcm_bytes
+    else:
+        in_path = os.path.join(work_dir, f"{tag}_in.wav")
+        out_path = os.path.join(work_dir, f"{tag}_out.wav")
+        _write_wav(in_path, pcm_bytes)
+        _run_ffmpeg(
+            ["-i", in_path, "-filter:a", _atempo_chain(factor),
+             "-ar", str(SAMPLE_RATE), "-ac", "1", "-acodec", "pcm_s16le", out_path],
+            f"ffmpeg помилка atempo для {tag}",
+        )
+        stretched = _read_wav_frames(out_path)
+        for p in (in_path, out_path):
+            if os.path.exists(p):
+                os.remove(p)
+
+    stretched_samples = len(stretched) // 2
+    if stretched_samples >= target_samples:
+        return stretched[: target_samples * 2]
+    return stretched + b"\x00\x00" * (target_samples - stretched_samples)
+
+
+def _assemble_dubbed_track(api_key: str, voice_id: str, segments: list[dict],
+                            translations: list[str], total_duration: float,
+                            out_wav_path: str, work_dir: str) -> None:
+    buffer = bytearray()
+    cursor = 0.0
+
+    for i, (seg, text) in enumerate(zip(segments, translations)):
+        gap = seg["start"] - cursor
+        if gap > 0:
+            buffer += b"\x00\x00" * round(gap * SAMPLE_RATE)
+
+        raw = _synthesize_segment(api_key, text, voice_id)
+        fitted = _fit_to_duration(raw, seg["end"] - seg["start"], work_dir, f"seg{i}")
+        buffer += fitted
+        cursor = seg["end"]
+        print(f"[dub] сегмент {i + 1}/{len(segments)} озвучено")
+
+    if cursor < total_duration:
+        buffer += b"\x00\x00" * round((total_duration - cursor) * SAMPLE_RATE)
+
+    _write_wav(out_wav_path, bytes(buffer))
+
+
+def _mux(video_path: str, dubbed_wav_path: str, out_video_path: str) -> None:
+    _run_ffmpeg(
+        ["-i", video_path, "-i", dubbed_wav_path,
+         "-map", "0:v:0", "-map", "1:a:0",
+         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+         "-shortest", out_video_path],
+        "ffmpeg помилка склейки фінального відео",
+    )
+
+
+def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str,
+                     work_dir: str, video_id: str, target_language: str = "es") -> str:
+    """
+    Повний DIY-дубляж без ліп-синку. Повертає шлях до готового mp4
+    (той самий відеоряд, нова аудіодоріжка іспанською).
+    """
+    os.makedirs(work_dir, exist_ok=True)
+
+    wav_path = os.path.join(work_dir, f"{video_id}_audio.wav")
+    _extract_audio_wav(video_path, wav_path)
+
+    language, segments = transcribe(openai_client, wav_path)
+    if not segments:
+        raise DubError("Whisper не розпізнав жодного сегмента мови у відео")
+    print(f"[dub] Whisper: мова={language}, сегментів={len(segments)}")
+
+    translations = translate_segments(openai_client, segments, target_language)
+
+    ref_path = os.path.join(work_dir, f"{video_id}_voice_ref.wav")
+    ref_transcript = _build_voice_reference(wav_path, segments, ref_path)
+
+    source_lang_code = LANG_CODE_MAP.get(language.lower(), DEFAULT_SOURCE_LANG_CODE)
+    if language.lower() == "ukrainian":
+        print("[dub][WARN] Українська — не в GA-списку мов Inworld, "
+              "якість клонування голосу не гарантована.")
+
+    voice_id = _clone_voice(inworld_api_key, ref_path, ref_transcript, source_lang_code, video_id)
+    print(f"[dub] Inworld voiceId: {voice_id}")
+
+    total_duration = _ffprobe_duration(video_path)
+    dubbed_wav_path = os.path.join(work_dir, f"{video_id}_dubbed_audio.wav")
+    _assemble_dubbed_track(inworld_api_key, voice_id, segments, translations,
+                            total_duration, dubbed_wav_path, work_dir)
+
+    output_path = os.path.join(work_dir, f"{video_id}_es.mp4")
+    _mux(video_path, dubbed_wav_path, output_path)
+
+    for p in (wav_path, ref_path, dubbed_wav_path):
+        if os.path.exists(p):
+            os.remove(p)
+
+    return output_path
