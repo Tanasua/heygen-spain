@@ -32,7 +32,12 @@ import wave
 
 SAMPLE_RATE = 24000
 INWORLD_BASE_URL = "https://api.inworld.ai"
-DEFAULT_MODEL_ID = "inworld-tts-1-max"
+# ВАЖЛИВО: inworld-tts-1-max/1.5 НЕ cross-lingual — переносить акцент
+# голосового зразка на цільову мову (звідси сильний акцент у першому
+# тесті). inworld-tts-2 за замовчуванням намагається говорити цільовою
+# мовою нативно, без акценту оригіналу. Мінус: tts-2 зараз research
+# preview (не GA) — менш стабільний статус, ніж 1.5.
+DEFAULT_MODEL_ID = "inworld-tts-2"
 
 # Whisper повертає повну назву мови ("russian", "ukrainian", ...).
 # Inworld TTS-2 GA-мови (підтверджено офіційно): en, zh, ja, ko, ru, it,
