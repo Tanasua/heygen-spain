@@ -74,12 +74,32 @@ def _ffprobe_duration(path: str) -> float:
     return float(result.stdout.strip())
 
 
-def _extract_audio_wav(video_path: str, out_path: str) -> None:
+# Whisper API приймає файли максимум 25 МБ (26214400 байт). Сирий PCM WAV
+# на 24кГц/mono важить ~5.5 МБ/хв — 30-хвилинне відео (наш ліміт для
+# inworld) уже вивалюється за межі. mp3 64kbps ~0.48 МБ/хв — з великим
+# запасом навіть на максимальну довжину.
+WHISPER_SIZE_LIMIT_BYTES = 25 * 1024 * 1024
+
+
+def _extract_audio_for_whisper(video_path: str, out_path: str, bitrate_kbps: int = 64) -> str:
+    """Стиснуте аудіо (mp3) для відправки в Whisper — щоб не впертись у 25 МБ ліміт."""
     _run_ffmpeg(
         ["-i", video_path, "-vn", "-ac", "1", "-ar", str(SAMPLE_RATE),
-         "-acodec", "pcm_s16le", out_path],
+         "-c:a", "libmp3lame", "-b:a", f"{bitrate_kbps}k", out_path],
         "ffmpeg помилка витягання аудіо",
     )
+    size = os.path.getsize(out_path)
+    if size > WHISPER_SIZE_LIMIT_BYTES:
+        if bitrate_kbps <= 24:
+            raise DubError(
+                f"Аудіо для Whisper все одно завелике ({size / 1024 / 1024:.1f} МБ) "
+                f"навіть на {bitrate_kbps}kbps — відео надто довге для одного запиту "
+                f"до Whisper (потрібне розбиття на частини, зараз не реалізовано)."
+            )
+        print(f"[dub] аудіо {size / 1024 / 1024:.1f} МБ > 25 МБ, знижую бітрейт "
+              f"{bitrate_kbps}kbps -> {bitrate_kbps // 2}kbps і перекодовую")
+        return _extract_audio_for_whisper(video_path, out_path, bitrate_kbps // 2)
+    return out_path
 
 
 def transcribe(client: OpenAI, wav_path: str) -> tuple[str, list[dict]]:
@@ -314,10 +334,10 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
     """
     os.makedirs(work_dir, exist_ok=True)
 
-    wav_path = os.path.join(work_dir, f"{video_id}_audio.wav")
-    _extract_audio_wav(video_path, wav_path)
+    audio_path = os.path.join(work_dir, f"{video_id}_audio.mp3")
+    _extract_audio_for_whisper(video_path, audio_path)
 
-    language, segments = transcribe(openai_client, wav_path)
+    language, segments = transcribe(openai_client, audio_path)
     if not segments:
         raise DubError("Whisper не розпізнав жодного сегмента мови у відео")
     print(f"[dub] Whisper: мова={language}, сегментів={len(segments)}")
@@ -325,7 +345,7 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
     translations = translate_segments(openai_client, segments, target_language)
 
     ref_path = os.path.join(work_dir, f"{video_id}_voice_ref.wav")
-    ref_transcript = _build_voice_reference(wav_path, segments, ref_path)
+    ref_transcript = _build_voice_reference(audio_path, segments, ref_path)
 
     source_lang_code = LANG_CODE_MAP.get(language.lower(), DEFAULT_SOURCE_LANG_CODE)
     if language.lower() == "ukrainian":
@@ -343,7 +363,7 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
     output_path = os.path.join(work_dir, f"{video_id}_es.mp4")
     _mux(video_path, dubbed_wav_path, output_path)
 
-    for p in (wav_path, ref_path, dubbed_wav_path):
+    for p in (audio_path, ref_path, dubbed_wav_path):
         if os.path.exists(p):
             os.remove(p)
 
