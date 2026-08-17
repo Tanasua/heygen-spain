@@ -4,7 +4,7 @@ google-auth-oauthlib==1.2.1
 google-auth-httplib2==0.2.0
 yt-dlp[default]==2026.7.4
 requests==2.32.3
-openai==1.51.0
+openai>=2.0.0  # gpt-image-2 (квітень 2026) вимагає SDK новіший за 1.51.0
 httpx==0.27.2
 Pillow==10.4.0
 python-dotenv==1.0.1

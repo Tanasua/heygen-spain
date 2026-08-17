@@ -71,7 +71,6 @@ BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 WORK_DIR = os.path.join(BASE_DIR, "tmp")
 THUMBNAILS_DIR = os.path.join(BASE_DIR, "data", "thumbnails")
 BIN_DIR = os.path.join(BASE_DIR, "tmp", "bin")
-FONT_PATH = os.path.join(BASE_DIR, "assets", "fonts", "Montserrat-ExtraBold.ttf")
 
 
 def _cleanup(paths: list[str]) -> None:
@@ -131,7 +130,6 @@ def _generate_metadata_and_thumbnail(openai_client: OpenAI, video: dict, title: 
         headline=metadata["thumbnail_headline"],
         scene_hint=title,
         output_path=thumbnail_path,
-        font_path=FONT_PATH,
     )
     print(f"[THUMBNAIL] {thumbnail_path}")
     return metadata
