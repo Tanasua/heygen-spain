@@ -95,7 +95,6 @@ def generate_thumbnail(client: OpenAI, reference_image_path: str, headline: str,
             prompt=prompt,
             size=GEN_SIZE,
             quality=quality,
-            response_format="b64_json",
         )
 
     image_bytes = base64.b64decode(result.data[0].b64_json)

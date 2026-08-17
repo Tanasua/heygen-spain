@@ -426,11 +426,5 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=U7aShUrkK8Y:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] U7aShUrkK8Y: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-08-17T14:25:22.638545+00:00",
     "updated_at": "2026-08-17T14:25:22.638567+00:00"
-  },
-  "OM2bNm7BB-U": {
-    "status": "failed",
-    "reason": "Error code: 400 - {'error': {'message': \"Unknown parameter: 'response_format'.\", 'type': 'invalid_request_error', 'param': 'response_format', 'code': 'unknown_parameter'}}",
-    "created_at": "2026-08-17T18:31:45.457652+00:00",
-    "updated_at": "2026-08-17T18:31:45.457672+00:00"
   }
 }
