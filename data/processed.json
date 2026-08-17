@@ -426,5 +426,29 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=U7aShUrkK8Y:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] U7aShUrkK8Y: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-08-17T14:25:22.638545+00:00",
     "updated_at": "2026-08-17T14:25:22.638567+00:00"
+  },
+  "Kg-4zdsO-8Y": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "НОВЫЙ ГЛАВКОМ ВСУ МЕНЯЕТ ПРАВИЛА ИГРЫ! КРЕМЛЬ БОИТСЯ ДРАПАТОГО!",
+    "duration_seconds": 1058,
+    "created_at": "2026-08-17T16:45:13.774983+00:00",
+    "updated_at": "2026-08-17T16:45:13.775002+00:00"
+  },
+  "OM2bNm7BB-U": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "ПРОРЫВА НЕТ! ВСУ сорвали планы Кремля! РОССИЯ МЕНЯЕТ ТАКТИКУ!",
+    "duration_seconds": 661,
+    "created_at": "2026-08-17T16:45:14.316536+00:00",
+    "updated_at": "2026-08-17T16:45:14.316550+00:00"
+  },
+  "fIZt-NSCdUs": {
+    "status": "skipped",
+    "reason": "too_long_for_heygen",
+    "title_original": "Мадяр СДЕЛАЛ ЭТО! Флот РФ —  В ОГНЕ! Пекло в Крыму!",
+    "duration_seconds": 1823,
+    "created_at": "2026-08-17T16:45:14.802622+00:00",
+    "updated_at": "2026-08-17T16:45:14.802637+00:00"
   }
 }
