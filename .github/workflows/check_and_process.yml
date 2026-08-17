@@ -53,6 +53,11 @@ jobs:
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+          # Резидентний/mobile проксі для yt-dlp — без нього завантаження з
+          # датацентр-IP GitHub Actions може впасти на "Sign in to confirm
+          # you're not a bot" навіть зі свіжими cookies. Формат:
+          # http://user:pass@host:port. Див. README.
+          YT_DLP_PROXY_URL: ${{ secrets.YT_DLP_PROXY_URL }}
           SOURCE_CHANNEL_HANDLE: "@GlavredTV"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

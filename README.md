@@ -162,6 +162,8 @@ HeyGen на виході все одно віддає 1080p, тож тримат
 | Secret | Опис |
 |---|---|
 | `YOUTUBE_API_KEY` | API-ключ з Google Cloud Console (YouTube Data API v3 увімкнено) — для читання даних з @GlavredTV |
+| `YOUTUBE_COOKIES` | Вміст `cookies.txt` (формат Netscape) залогіненого YouTube-акаунта — без цього yt-dlp блокується на датацентр-IP GitHub Actions. Час від часу протухає (Google ротує), тоді потрібен новий експорт. |
+| `YT_DLP_PROXY_URL` | Резидентний/mobile проксі для yt-dlp, формат `http://user:pass@host:port`. Без нього навіть свіжі cookies не завжди рятують від "Sign in to confirm you're not a bot" (2026 дані) — датацентр-IP сам по собі позначається як підозрілий. Опційно, але дуже рекомендовано. |
 | `OPENAI_API_KEY` | Ключ з platform.openai.com |
 | `HEYGEN_API_KEY` | Ключ з налаштувань акаунта HeyGen |
 | `INWORLD_API_KEY` | Опційно: тільки для `DUB_PROVIDER=inworld` (альтернативний дубляж без ліп-синку, див. розділ 2a) |
@@ -175,6 +177,26 @@ HeyGen на виході все одно віддає 1080p, тож тримат
 1. У Google Cloud Console створіть OAuth Client ID (тип "Desktop app").
 2. Локально одноразово пройдіть OAuth-флоу (google-auth-oauthlib) із залогіненим акаунтом власника @AHORAMISMO-b5e, з scope `https://www.googleapis.com/auth/youtube.upload`.
 3. Збережіть отриманий `refresh_token` — він не має терміну дії, доки ви не відкличете доступ.
+
+### Резидентний проксі для yt-dlp (YT_DLP_PROXY_URL)
+
+GitHub Actions runner — це датацентр-IP, і YouTube блокує його як "підозрілий"
+("Sign in to confirm you're not a bot") незалежно від того, наскільки свіжі
+cookies. Рішення — маршрутизувати yt-dlp через резидентний або mobile проксі
+(не datacenter-проксі — ті так само палять):
+
+1. Візьміть підписку в провайдера резидентних проксі (напр. Webshare, Bright
+   Data, Oxylabs — кілька $/міс за невеликий обсяг).
+2. Отримайте URL у форматі `http://user:pass@host:port` (або `socks5://...`).
+3. Додайте як GitHub Secret `YT_DLP_PROXY_URL`.
+
+`downloader.py` підхопить його автоматично (`--proxy` в yt-dlp) і
+використовуватиме разом із `YOUTUBE_COOKIES` — обидва захисти незалежні один
+від одного і посилюють один одного, а не взаємозамінні.
+
+⚠️ Я не мав мережевого доступу протестувати це з реальним проксі-провайдером
+— перший реальний запуск з новим `YT_DLP_PROXY_URL` варто перевірити вручну
+(workflow_dispatch), перш ніж покладатись на плановий крон.
 
 ---
 

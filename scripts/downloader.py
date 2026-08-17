@@ -5,11 +5,19 @@
 import os
 import subprocess
 
-# YouTube блокує завантаження з датацентр-IP (GitHub Actions) як "підозрілі".
-# Обхід — передавати реальні cookies залогіненого акаунта через --cookies.
-# Вміст файлу cookies.txt (формат Netscape) кладеться в GitHub Secret YOUTUBE_COOKIES.
+# YouTube блокує завантаження з датацентр-IP (GitHub Actions) як "підозрілі"
+# ("Sign in to confirm you're not a bot") — незалежно від того, наскільки
+# свіжі cookies. Два незалежні захисти комбінуються:
+# 1. Cookies залогіненого акаунта (--cookies). Вміст cookies.txt (формат
+#    Netscape) — у GitHub Secret YOUTUBE_COOKIES. Час від часу протухають
+#    (Google ротує), тоді потрібен новий експорт.
+# 2. Резидентний/mobile проксі (--proxy) — щоб запит взагалі не йшов з
+#    датацентр-IP GitHub Actions. Формат: http://user:pass@host:port або
+#    socks5://user:pass@host:port. GitHub Secret YT_DLP_PROXY_URL.
+#    Без нього cookies самі по собі не завжди рятують (2026 дані).
 COOKIES_ENV_VAR = "YOUTUBE_COOKIES"
 COOKIES_PATH = "/tmp/yt_cookies.txt"
+PROXY_ENV_VAR = "YT_DLP_PROXY_URL"
 
 
 def _prepare_cookies_file() -> str | None:
@@ -40,6 +48,10 @@ def download_video(video_url: str, output_dir: str, video_id: str) -> str:
     cookies_path = _prepare_cookies_file()
     if cookies_path:
         cmd += ["--cookies", cookies_path]
+
+    proxy_url = os.environ.get(PROXY_ENV_VAR)
+    if proxy_url:
+        cmd += ["--proxy", proxy_url]
 
     cmd.append(video_url)
 
