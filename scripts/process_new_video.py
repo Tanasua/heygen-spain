@@ -66,10 +66,6 @@ elif not HEYGEN_API_KEY:
 FETCH_TIMEOUT_SECONDS = int(os.environ.get("FETCH_TIMEOUT_SECONDS", 45 * 60))
 # Перекодування для зменшення файлу: 0 = вимкнено, інакше макс. висота (1080).
 TRANSCODE_MAX_HEIGHT = int(os.environ.get("TRANSCODE_MAX_HEIGHT", 0))
-# Ліміт довжини для DUB_PROVIDER=inworld — не пов'язаний з обмеженням HeyGen
-# (youtube_monitor.MAX_DURATION_SECONDS), бо Whisper/GPT/Inworld TTS довге
-# відео просто довше обробляють, без якісних чи цінових стрибків HeyGen.
-INWORLD_MAX_DURATION_SECONDS = int(os.environ.get("INWORLD_MAX_DURATION_SECONDS", 30 * 60))
 # 0 = без обмеження. Корисно для контрольованого тесту (обробити 1 відео,
 # а не всі нові одразу).
 MAX_VIDEOS_PER_RUN = int(os.environ.get("MAX_VIDEOS_PER_RUN", 0))
@@ -219,16 +215,6 @@ def process_video(video: dict, openai_client: OpenAI) -> None:
     video_id = video["video_id"]
     title = video["title"]
     duration = video["duration_seconds"]
-
-    max_duration = INWORLD_MAX_DURATION_SECONDS if DUB_PROVIDER == "inworld" \
-        else youtube_monitor.MAX_DURATION_SECONDS
-    if not youtube_monitor.is_short_enough(duration, max_duration):
-        reason = "too_long_for_inworld" if DUB_PROVIDER == "inworld" else "too_long_for_heygen"
-        state_manager.mark_skipped(video_id, title, duration, reason=reason)
-        telegram_notifier.notify_skipped(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-                                          title, video["url"], duration)
-        print(f"[SKIP] {video_id} — задовге ({duration}s > {max_duration}s)")
-        return
 
     print(f"[PROCESS] {video_id} — {title} (DUB_PROVIDER={DUB_PROVIDER})")
     os.makedirs(WORK_DIR, exist_ok=True)
