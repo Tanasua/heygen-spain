@@ -97,13 +97,6 @@ def process_video(video: dict, openai_client: OpenAI) -> None:
     title = video["title"]
     duration = video["duration_seconds"]
 
-    if not youtube_monitor.is_short_enough(duration):
-        state_manager.mark_skipped(video_id, title, duration, reason="too_long_for_heygen")
-        telegram_notifier.notify_skipped(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-                                          title, video["url"], duration)
-        print(f"[SKIP] {video_id} — задовге ({duration}s)")
-        return
-
     print(f"[PROCESS] {video_id} — {title}")
     os.makedirs(WORK_DIR, exist_ok=True)
     os.makedirs(THUMBNAILS_DIR, exist_ok=True)

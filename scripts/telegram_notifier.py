@@ -22,17 +22,6 @@ def send_message(bot_token: str, chat_id: str, text: str) -> None:
         print(f"[telegram_notifier] Не вдалось надіслати повідомлення: {e}")
 
 
-def notify_skipped(bot_token: str, chat_id: str, title: str, url: str, duration_seconds: int) -> None:
-    minutes = duration_seconds // 60
-    seconds = duration_seconds % 60
-    text = (
-        f"⏭️ <b>Відео пропущено</b> (задовге для HeyGen: {minutes}:{seconds:02d})\n\n"
-        f"{title}\n{url}\n\n"
-        f"Якщо треба обробити вручну — дайте знати."
-    )
-    send_message(bot_token, chat_id, text)
-
-
 def notify_translating(bot_token: str, chat_id: str, title: str) -> None:
     text = f"🌐 <b>Відправлено на переклад</b>\n\n{title}"
     send_message(bot_token, chat_id, text)

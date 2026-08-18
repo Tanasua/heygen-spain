@@ -10,9 +10,6 @@
 import re
 from googleapiclient.discovery import build
 
-# ТИМЧАСОВО піднято з 6*60 до 8*60 для тесту. Поверни на 6*60 після тесту.
-MAX_DURATION_SECONDS = 8 * 60
-
 
 def _parse_iso8601_duration(duration: str) -> int:
     """Перетворює 'PT19M1S' -> секунди."""
@@ -85,7 +82,3 @@ def get_latest_videos(api_key: str, channel_id: str = None, handle: str = None,
         })
 
     return results
-
-
-def is_short_enough(duration_seconds: int) -> bool:
-    return duration_seconds < MAX_DURATION_SECONDS
