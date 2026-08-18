@@ -262,12 +262,19 @@ def _clone_voice(api_key: str, ref_path: str, transcript: str, lang_code: str, v
     return voice_id
 
 
-def _synthesize_segment(api_key: str, text: str, voice_id: str) -> bytes:
-    """Повертає сирі PCM16 mono семпли (без WAV-заголовка)."""
+def _synthesize_segment(api_key: str, text: str, voice_id: str, target_language: str) -> bytes:
+    """Повертає сирі PCM16 mono семпли (без WAV-заголовка).
+
+    ВАЖЛИВО: параметр "language" (BCP-47, напр. "es") — це не косметика, а
+    те, що фактично вмикає cross-lingual поведінку tts-2 (native-акцент
+    цільової мови). Без нього перший реальний тест зберіг акцент оригіналу
+    (голос синтезувався фонологією мови клонування, а не цільової).
+    """
     payload = {
         "text": text,
         "voiceId": voice_id,
         "modelId": DEFAULT_MODEL_ID,
+        "language": target_language,
         "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": SAMPLE_RATE},
     }
     headers = {"Authorization": f"Basic {api_key}", "Content-Type": "application/json"}
@@ -347,7 +354,7 @@ def _fit_to_duration(pcm_bytes: bytes, target_duration: float, work_dir: str, ta
 
 def _assemble_dubbed_track(api_key: str, voice_id: str, segments: list[dict],
                             translations: list[str], total_duration: float,
-                            out_wav_path: str, work_dir: str) -> None:
+                            out_wav_path: str, work_dir: str, target_language: str) -> None:
     buffer = bytearray()
     cursor = 0.0
 
@@ -356,7 +363,7 @@ def _assemble_dubbed_track(api_key: str, voice_id: str, segments: list[dict],
         if gap > 0:
             buffer += b"\x00\x00" * round(gap * SAMPLE_RATE)
 
-        raw = _synthesize_segment(api_key, text, voice_id)
+        raw = _synthesize_segment(api_key, text, voice_id, target_language)
         fitted = _fit_to_duration(raw, seg["end"] - seg["start"], work_dir, f"seg{i}")
         buffer += fitted
         cursor = seg["end"]
@@ -410,7 +417,7 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
     total_duration = _ffprobe_duration(video_path)
     dubbed_wav_path = os.path.join(work_dir, f"{video_id}_dubbed_audio.wav")
     _assemble_dubbed_track(inworld_api_key, voice_id, segments, translations,
-                            total_duration, dubbed_wav_path, work_dir)
+                            total_duration, dubbed_wav_path, work_dir, target_language)
 
     output_path = os.path.join(work_dir, f"{video_id}_es.mp4")
     _mux(video_path, dubbed_wav_path, output_path)
