@@ -482,5 +482,17 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=-2p5WBFNoI0:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] -2p5WBFNoI0: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-08-18T07:05:56.640451+00:00",
     "updated_at": "2026-08-18T07:05:56.640470+00:00"
+  },
+  "JZkQAXitV2k": {
+    "status": "published",
+    "title_original": "ГРОМКО! Ночь ВЗРЫВОВ в Сочи: снесли дивизион ПВО и ВЫЖГЛИ нефтебазу!",
+    "duration_seconds": 231,
+    "heygen_job_id": "inworld-dub",
+    "es_title": "¡IMPACTANTE NOCHE DE EXPLOSIONES EN SOCHI! Defensa aérea destruida y enorme incendio en petrolera",
+    "es_description": "¡Noche de terror en Sochi! Fuertes explosiones arrasaron un sistema de defensa antiaérea y provocaron un incendio masivo en una planta petrolera. Las autoridades aún evalúan los daños y se reportan imágenes dramáticas desde la zona. ¿Quién está detrás de este ataque? #Sochi #Explosiones #Ucrania #Guerra #ÚltimaHora",
+    "thumbnail_path": "data/thumbnails/JZkQAXitV2k.jpg",
+    "created_at": "2026-09-04T10:23:04.209323+00:00",
+    "updated_at": "2026-09-04T10:23:04.212040+00:00",
+    "es_video_id": "xFkrD5srNLw"
   }
 }
