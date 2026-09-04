@@ -39,6 +39,9 @@ INWORLD_BASE_URL = "https://api.inworld.ai"
 # preview (не GA) — менш стабільний статус, ніж 1.5.
 DEFAULT_MODEL_ID = "inworld-tts-2"
 
+# Наразі не використовується в клонуванні (див. translate_video — зараз
+# клонуємо з langCode цільової мови, не мови оригіналу, як експеримент
+# проти акценту). Лишено для швидкого відкату, якщо експеримент не зайде.
 # Whisper повертає повну назву мови ("russian", "ukrainian", ...).
 # Inworld TTS-2 GA-мови (підтверджено офіційно): en, zh, ja, ko, ru, it,
 # es, pt, fr, de, pl, nl, hi, he, ar. Українська — не в GA-списку.
@@ -406,13 +409,23 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
     ref_path = os.path.join(work_dir, f"{video_id}_voice_ref.wav")
     ref_transcript = _build_voice_reference(audio_path, segments, ref_path)
 
-    source_lang_code = LANG_CODE_MAP.get(language.lower(), DEFAULT_SOURCE_LANG_CODE)
     if language.lower() == "ukrainian":
         print("[dub][WARN] Українська — не в GA-списку мов Inworld, "
               "якість клонування голосу не гарантована.")
 
-    voice_id = _clone_voice(inworld_api_key, ref_path, ref_transcript, source_lang_code, video_id)
-    print(f"[dub] Inworld voiceId: {voice_id}")
+    # ЕКСПЕРИМЕНТ (замість source_lang_code="ru"): клонуємо голос одразу з
+    # langCode цільової мови. Перша спроба (модель tts-2 + "language": "es"
+    # у /tts/v1/voice) акцент не прибрала — за документацією langCode при
+    # клонуванні визначає саме "локаль" голосу (приклад з доків: щоб
+    # клонувати голос із британським акцентом, шлють "en-GB"). Тобто
+    # можливо, клон із langCode="ru" "зафіксовує" російську вимову вже на
+    # цьому кроці, і жоден "language" на синтезі це не перекриває.
+    # Якщо це теж не допоможе — це вже реальна межа tts-2, а не параметр,
+    # який можна підкрутити.
+    clone_lang_code = TARGET_LANG_CODE_MAP.get(target_language, target_language)
+    voice_id = _clone_voice(inworld_api_key, ref_path, ref_transcript, clone_lang_code, video_id)
+    print(f"[dub] Inworld voiceId: {voice_id} (клоновано з langCode={clone_lang_code}, "
+          f"експеримент — раніше було мовою оригіналу)")
 
     total_duration = _ffprobe_duration(video_path)
     dubbed_wav_path = os.path.join(work_dir, f"{video_id}_dubbed_audio.wav")
