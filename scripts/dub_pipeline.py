@@ -27,6 +27,7 @@ GPT-переклад тексту + Inworld TTS), бо кожен компоне
 
 import base64
 import os
+import struct
 import subprocess
 import wave
 
@@ -323,6 +324,34 @@ def _atempo_chain(factor: float) -> str:
     return ",".join(filters)
 
 
+FADE_MS = 8.0
+
+
+def _apply_fade(pcm_bytes: bytes, fade_ms: float = FADE_MS) -> bytes:
+    """Лінійний fade-in/fade-out на краях сегмента.
+
+    Без цього кожен сегмент вставляється в тишу (чи впритул до сусіднього
+    сегмента) з різким стрибком амплітуди на межі — звідси чутний
+    клік/щиглик між репліками. Особливо критично там, де _fit_to_duration
+    обрізає хвилю (не в нулі) при стисканні під тайм-стрейч.
+    """
+    fade_samples = min(int(SAMPLE_RATE * fade_ms / 1000), len(pcm_bytes) // 2 // 2)
+    if fade_samples <= 0:
+        return pcm_bytes
+
+    samples = bytearray(pcm_bytes)
+    total = len(samples) // 2
+    for i in range(fade_samples):
+        factor = i / fade_samples
+        in_idx = i * 2
+        val_in = struct.unpack_from("<h", samples, in_idx)[0]
+        struct.pack_into("<h", samples, in_idx, int(val_in * factor))
+        out_idx = (total - 1 - i) * 2
+        val_out = struct.unpack_from("<h", samples, out_idx)[0]
+        struct.pack_into("<h", samples, out_idx, int(val_out * factor))
+    return bytes(samples)
+
+
 def _fit_to_duration(pcm_bytes: bytes, target_duration: float, work_dir: str, tag: str) -> bytes:
     """Тайм-стрейч синтезованого сегмента під точну тривалість оригінальної репліки."""
     target_samples = max(1, round(target_duration * SAMPLE_RATE))
@@ -368,7 +397,7 @@ def _assemble_dubbed_track(api_key: str, voice_id: str, segments: list[dict],
 
         raw = _synthesize_segment(api_key, text, voice_id, target_language)
         fitted = _fit_to_duration(raw, seg["end"] - seg["start"], work_dir, f"seg{i}")
-        buffer += fitted
+        buffer += _apply_fade(fitted)
         cursor = seg["end"]
         print(f"[dub] сегмент {i + 1}/{len(segments)} озвучено")
 
