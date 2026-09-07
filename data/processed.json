@@ -1018,5 +1018,16 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=8M8ROsQ1l0I:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] 8M8ROsQ1l0I: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-09-06T17:14:51.677238+00:00",
     "updated_at": "2026-09-06T17:14:51.677252+00:00"
+  },
+  "E7QQ3T8muxM": {
+    "status": "translating",
+    "title_original": "Ноябрь всё меняет: эксперт объяснил, почему следующие недели могут стать РЕШАЮЩИМИ",
+    "duration_seconds": 880,
+    "heygen_job_id": "7daa333d3ff9466ebfb58fa1a1aa54b1-es",
+    "es_title": "¡NOVIEMBRE CAMBIA TODO! EXPERTO REVELA POR QUÉ LAS PRÓXIMAS SEMANAS SON CLAVE EN UCRANIA",
+    "es_description": "Un reconocido experto advierte que noviembre podría ser el punto de inflexión en la guerra de Ucrania. Las próximas semanas serán decisivas y podrían cambiar el rumbo del conflicto. ¿Qué factores podrían desencadenar un giro inesperado? Descúbrelo aquí. #Ucrania #Guerra #ÚltimaHora #Noticias #Conflicto",
+    "thumbnail_path": "data/thumbnails/E7QQ3T8muxM.jpg",
+    "created_at": "2026-09-07T06:30:04.154464+00:00",
+    "updated_at": "2026-09-07T06:30:04.154477+00:00"
   }
 }
