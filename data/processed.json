@@ -1020,7 +1020,7 @@
     "updated_at": "2026-09-06T17:14:51.677252+00:00"
   },
   "E7QQ3T8muxM": {
-    "status": "translating",
+    "status": "failed",
     "title_original": "Ноябрь всё меняет: эксперт объяснил, почему следующие недели могут стать РЕШАЮЩИМИ",
     "duration_seconds": 880,
     "heygen_job_id": "7daa333d3ff9466ebfb58fa1a1aa54b1-es",
@@ -1028,6 +1028,7 @@
     "es_description": "Un reconocido experto advierte que noviembre podría ser el punto de inflexión en la guerra de Ucrania. Las próximas semanas serán decisivas y podrían cambiar el rumbo del conflicto. ¿Qué factores podrían desencadenar un giro inesperado? Descúbrelo aquí. #Ucrania #Guerra #ÚltimaHora #Noticias #Conflicto",
     "thumbnail_path": "data/thumbnails/E7QQ3T8muxM.jpg",
     "created_at": "2026-09-07T06:30:04.154464+00:00",
-    "updated_at": "2026-09-07T06:30:04.154477+00:00"
+    "updated_at": "2026-09-07T12:36:09.991292+00:00",
+    "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
   }
 }
