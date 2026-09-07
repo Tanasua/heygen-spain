@@ -1032,7 +1032,7 @@
     "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
   },
   "Xc73ooBXvHw": {
-    "status": "translating",
+    "status": "failed",
     "title_original": "Россия собрала 200 ТЫСЯЧ — и не может прорваться: что скрывают за заявлениями Путина",
     "duration_seconds": 1142,
     "heygen_job_id": "50cea14ded674746943885d7a8360eba-es",
@@ -1040,10 +1040,11 @@
     "es_description": "IMPACTANTE: Rusia reúne un enorme ejército de 200 mil soldados en Ucrania, pero sigue sin lograr avances significativos. ¿Qué se esconde tras las declaraciones de Putin? Analizamos las claves del estancamiento ruso y lo que no te cuentan los medios oficiales. #Ucrania #Rusia #Putin #Guerra #ÚltimaHora",
     "thumbnail_path": "data/thumbnails/Xc73ooBXvHw.jpg",
     "created_at": "2026-09-07T12:59:46.070585+00:00",
-    "updated_at": "2026-09-07T12:59:46.070598+00:00"
+    "updated_at": "2026-09-07T17:55:34.813638+00:00",
+    "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
   },
   "I81lOzXS-IM": {
-    "status": "translating",
+    "status": "failed",
     "title_original": "ТРИЛЛИОН РУБЛЕЙ ЗА РАЗ: экономист заявил, что Кремль начал напрямую затыкать бюджетную дыру",
     "duration_seconds": 1184,
     "heygen_job_id": "a2c8670b00df459e95b4a4592f67035f-es",
@@ -1051,7 +1052,8 @@
     "es_description": "IMPACTANTE: Un reconocido economista revela que el Kremlin ha desembolsado de golpe un billón de rublos para cubrir el enorme déficit fiscal ruso. ¿Se acerca un colapso financiero en Rusia? Descubre las últimas maniobras del gobierno de Putin. #Rusia #Economía #GuerraEnUcrania #Putin #Noticias",
     "thumbnail_path": "data/thumbnails/I81lOzXS-IM.jpg",
     "created_at": "2026-09-07T13:05:14.444913+00:00",
-    "updated_at": "2026-09-07T13:05:14.444929+00:00"
+    "updated_at": "2026-09-07T17:55:35.692123+00:00",
+    "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
   },
   "woU4SP-vMbc": {
     "status": "failed",
