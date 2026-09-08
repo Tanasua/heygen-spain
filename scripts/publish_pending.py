@@ -13,6 +13,7 @@
 """
 
 import os
+import sys
 import traceback
 from datetime import datetime, timezone, timedelta
 
@@ -64,7 +65,10 @@ def _remove_thumbnail(record: dict) -> None:
             print(f"[CLEANUP] Не вдалось видалити {rel_path}: {e}")
 
 
-def handle_pending(video_id: str, record: dict) -> None:
+def handle_pending(video_id: str, record: dict) -> bool:
+    """Повертає False, якщо запис впав — main() використовує це, щоб
+    завершити скрипт ненульовим кодом і зупинити плановий крон до ручного
+    втручання."""
     job_id = record["heygen_job_id"]
     title = record["title_original"]
 
@@ -77,14 +81,14 @@ def handle_pending(video_id: str, record: dict) -> None:
             telegram_notifier.notify_error(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
                                             stage="heygen_timeout", video_title=title, error=reason)
             _remove_thumbnail(record)
-            return
+            return False
 
         status_info = heygen_client.check_job_status(HEYGEN_API_KEY, job_id)
         status = status_info["status"]
 
         if status in ("pending", "running"):
             print(f"[WAIT] {video_id} — статус HeyGen: {status}")
-            return
+            return True
 
         if status == "failed":
             reason = f"HeyGen job failed: {status_info.get('failure_message') or status_info.get('raw')}"
@@ -92,15 +96,15 @@ def handle_pending(video_id: str, record: dict) -> None:
             telegram_notifier.notify_error(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
                                             stage="heygen_translate", video_title=title, error=reason)
             _remove_thumbnail(record)
-            return
+            return False
 
         if status != "completed":
             print(f"[UNKNOWN STATUS] {video_id} — {status}, пропускаю до наступного разу")
-            return
+            return True
 
         if not status_info.get("url"):
             print(f"[WARN] {video_id} — статус completed, але video_url відсутній. Спробую наступного разу.")
-            return
+            return True
 
         # Готово -> завантажуємо перекладене відео
         os.makedirs(WORK_DIR, exist_ok=True)
@@ -139,6 +143,7 @@ def handle_pending(video_id: str, record: dict) -> None:
             os.remove(local_thumbnail)
             print(f"[CLEANUP] Видалено {rel_path}")
 
+        return True
 
     except Exception as e:
         traceback.print_exc()
@@ -148,6 +153,7 @@ def handle_pending(video_id: str, record: dict) -> None:
         # Обкладинку навмисно НЕ видаляємо: якщо помилка тимчасова
         # (квота YouTube, мережа), наступний запуск спробує ще раз і
         # обкладинка знадобиться. Прибереться при stale-таймауті.
+        return False
 
     finally:
         for path in (translated_path,):
@@ -164,8 +170,13 @@ def main():
         print("Немає відео в очікуванні публікації.")
         return
 
+    any_failed = False
     for video_id, record in pending.items():
-        handle_pending(video_id, record)
+        if not handle_pending(video_id, record):
+            any_failed = True
+
+    if any_failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: check-and-process
@@ -99,3 +100,17 @@ jobs:
           done
           echo "Не вдалось запушити стан після 5 спроб" >&2
           exit 1
+
+      # Скрипт тепер завершується з ненульовим кодом при реальній помилці
+      # (mark_failed), тож цей крок спрацює лише якщо щось справді впало.
+      # Вимикаємо розклад (schedule), щоб той самий баг не повторювався
+      # мовчки кожні 30 хв — увімкнути назад вручну: Actions -> цей workflow
+      # -> "..." -> Enable workflow.
+      - name: Disable schedule after failure (circuit breaker)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --method PUT \
+            "repos/${{ github.repository }}/actions/workflows/check_and_process.yml/disable"
+          echo "::warning::Розклад check_and_process.yml вимкнено через помилку. Увімкніть вручну після виправлення."

@@ -16,6 +16,7 @@ HeyGen успішно забрав відео. Якщо тунель не під
 
 import os
 import shutil
+import sys
 import traceback
 
 import requests
@@ -211,7 +212,10 @@ def _process_with_inworld(video: dict, openai_client: OpenAI, video_id: str, tit
         _cleanup([video_path, dubbed_path])
 
 
-def process_video(video: dict, openai_client: OpenAI) -> None:
+def process_video(video: dict, openai_client: OpenAI) -> bool:
+    """Повертає False, якщо відео впало — main() використовує це, щоб
+    завершити скрипт ненульовим кодом і зупинити плановий крон до ручного
+    втручання (інакше помилка мовчки повторювалась би щопівгодини)."""
     video_id = video["video_id"]
     title = video["title"]
     duration = video["duration_seconds"]
@@ -235,6 +239,7 @@ def process_video(video: dict, openai_client: OpenAI) -> None:
         else:
             _process_with_heygen(video, openai_client, video_id, title, duration,
                                   video_path, thumb_ref_path, thumbnail_path)
+        return True
 
     except Exception as e:
         traceback.print_exc()
@@ -242,6 +247,7 @@ def process_video(video: dict, openai_client: OpenAI) -> None:
         telegram_notifier.notify_error(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
                                         stage="process_new_video", video_title=title, error=str(e))
         _cleanup([thumbnail_path])
+        return False
 
     finally:
         _cleanup([video_path, thumb_ref_path])
@@ -266,8 +272,13 @@ def main():
         ordered = ordered[:MAX_VIDEOS_PER_RUN]
         print(f"[LIMIT] MAX_VIDEOS_PER_RUN={MAX_VIDEOS_PER_RUN} — обробляю лише {len(ordered)}")
 
+    any_failed = False
     for video in ordered:
-        process_video(video, openai_client)
+        if not process_video(video, openai_client):
+            any_failed = True
+
+    if any_failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

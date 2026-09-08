@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: publish
@@ -60,3 +61,16 @@ jobs:
           done
           echo "Не вдалось запушити стан після 5 спроб" >&2
           exit 1
+
+      # Аналогічно check_and_process.yml: скрипт тепер повертає ненульовий
+      # код при реальній помилці — вимикаємо розклад, щоб не повторювати
+      # той самий баг щопівгодини. Увімкнути назад: Actions -> цей workflow
+      # -> "..." -> Enable workflow.
+      - name: Disable schedule after failure (circuit breaker)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --method PUT \
+            "repos/${{ github.repository }}/actions/workflows/publish.yml/disable"
+          echo "::warning::Розклад publish.yml вимкнено через помилку. Увімкніть вручну після виправлення."
