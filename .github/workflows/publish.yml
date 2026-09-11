@@ -1,8 +1,11 @@
 name: Publish Translated Videos
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # Пайплайн зупинено на прохання користувача (2026-09-11) — schedule
+  # вимкнено, залишився лише ручний запуск через workflow_dispatch.
+  # Щоб відновити автоматичний прогін, розкоментуй блок schedule нижче.
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 permissions:
