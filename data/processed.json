@@ -1426,5 +1426,27 @@
     "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=1IBtBv8C6m8:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] 1IBtBv8C6m8: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
     "created_at": "2026-09-16T17:40:14.970900+00:00",
     "updated_at": "2026-09-16T17:40:14.970939+00:00"
+  },
+  "KH5w7I3AQUE": {
+    "status": "translating",
+    "title_original": "ЭТО СЛУЧИТСЯ СРАЗУ ПОСЛЕ \"ВЫБОРОВ\"! Путин готовит жесткий удар!",
+    "duration_seconds": 1094,
+    "heygen_job_id": "00cc24b38e924def930a70c379a8fabc-es",
+    "es_title": "¡URGENTE! LO QUE HARÁ PUTIN JUSTO TRAS LAS ELECCIONES IMPACTA AL MUNDO",
+    "es_description": "¡Atención! Después de las elecciones, Putin planea un golpe contundente que podría cambiar el rumbo de la guerra en Ucrania. Analizamos las posibles acciones y sus consecuencias inmediatas. ¿Está el mundo preparado? No te pierdas este impactante informe. #Ucrania #Putin #ÚltimaHora #Guerra #Rusia",
+    "thumbnail_path": "data/thumbnails/KH5w7I3AQUE.jpg",
+    "created_at": "2026-09-16T20:34:57.136619+00:00",
+    "updated_at": "2026-09-16T20:34:57.136635+00:00"
+  },
+  "szhGj_XUNek": {
+    "status": "translating",
+    "title_original": "ЭКСТРЕННО из Германии! РФ атаковала Европу?!",
+    "duration_seconds": 219,
+    "heygen_job_id": "58783e6c459241debea537661d5a07ed-es",
+    "es_title": "¡URGENTE DESDE ALEMANIA! ¿RUSIA ATACA A EUROPA? ¡ALERTA MÁXIMA!",
+    "es_description": "¡Noticia de última hora desde Alemania! Se reportan ataques desde Rusia que ponen en alerta a toda Europa. ¿Estamos ante una nueva escalada en el conflicto? Te contamos TODO lo que se sabe hasta el momento. #Ucrania #Rusia #Europa #Guerra #ÚltimaHora",
+    "thumbnail_path": "data/thumbnails/szhGj_XUNek.jpg",
+    "created_at": "2026-09-16T20:38:38.431712+00:00",
+    "updated_at": "2026-09-16T20:38:38.431729+00:00"
   }
 }
