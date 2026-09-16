@@ -1,22 +1,51 @@
 name: Check & Process New Videos
 
 on:
-  # Пайплайн зупинено на прохання користувача (2026-09-11) — schedule
-  # вимкнено, залишився лише ручний запуск через workflow_dispatch.
-  # Щоб відновити автоматичний прогін, розкоментуй блок schedule нижче.
-  # schedule:
-  #   - cron: "*/30 * * * *"
+  schedule:
+    - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: check-and-process
   cancel-in-progress: false
 
 jobs:
+  # Cron спрацьовує кожні 30 хв (48 разів/добу), але реальну обробку
+  # пускаємо не більше 5 разів на добу — незалежно від того, впав
+  # попередній запуск чи відпрацював успішно. Рахуємо ВСІ запуски цього
+  # workflow (будь-якого статусу) від початку поточної доби (UTC).
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Порахувати запуски за сьогодні (UTC) і застосувати ліміт 5/добу
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          today="$(date -u +%Y-%m-%d)"
+          count="$(curl -sS \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/check_and_process.yml/runs?created=%3E%3D${today}&per_page=100" \
+            | jq '.total_count')"
+          echo "Запусків check_and_process.yml сьогодні (включно з цим): $count"
+          if [ "$count" -gt 5 ]; then
+            echo "Ліміт 5 запусків/добу вичерпано — пропускаю обробку до завтра (UTC)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   process:
+    needs: gate
+    if: needs.gate.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
