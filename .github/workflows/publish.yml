@@ -14,29 +14,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Аналогічно check_and_process.yml: cron стукає кожні 15 хв, але реальну
-  # публікацію пускаємо не більше 5 разів на добу, незалежно від успіху/
-  # невдачі попередніх запусків.
+  # Той самий спільний ліміт, що й у check_and_process.yml: не більше 5
+  # запусків на добу СУМАРНО на обидва workflow разом, незалежно від
+  # успіху/невдачі.
   gate:
     runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
-      - name: Порахувати запуски за сьогодні (UTC) і застосувати ліміт 5/добу
+      - name: Порахувати запуски пайплайну за сьогодні (UTC) і застосувати ліміт 5/добу
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           today="$(date -u +%Y-%m-%d)"
-          count="$(curl -sS \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/runs?created=%3E%3D${today}&per_page=100" \
-            | jq '.total_count')"
-          echo "Запусків publish.yml сьогодні (включно з цим): $count"
-          if [ "$count" -gt 5 ]; then
-            echo "Ліміт 5 запусків/добу вичерпано — пропускаю публікацію до завтра (UTC)."
+          total=0
+          for wf in check_and_process.yml publish.yml; do
+            count="$(curl -sS \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${wf}/runs?created=%3E%3D${today}&per_page=100" \
+              | jq '.total_count')"
+            echo "Запусків ${wf} сьогодні: $count"
+            total=$((total + count))
+          done
+          echo "Разом запусків пайплайну сьогодні (включно з цим): $total"
+          if [ "$total" -gt 5 ]; then
+            echo "Ліміт 5 запусків/добу на весь пайплайн вичерпано — пропускаю публікацію до завтра (UTC)."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

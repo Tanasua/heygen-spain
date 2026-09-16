@@ -15,29 +15,35 @@ concurrency:
 
 jobs:
   # Cron спрацьовує кожні 30 хв (48 разів/добу), але реальну обробку
-  # пускаємо не більше 5 разів на добу — незалежно від того, впав
-  # попередній запуск чи відпрацював успішно. Рахуємо ВСІ запуски цього
-  # workflow (будь-якого статусу) від початку поточної доби (UTC).
+  # пускаємо не більше 5 разів на добу СУМАРНО на весь пайплайн —
+  # рахуємо запуски і check_and_process.yml, і publish.yml разом, будь-
+  # якого статусу (success/failure/cancelled/in_progress), від початку
+  # поточної доби (UTC).
   gate:
     runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
-      - name: Порахувати запуски за сьогодні (UTC) і застосувати ліміт 5/добу
+      - name: Порахувати запуски пайплайну за сьогодні (UTC) і застосувати ліміт 5/добу
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           today="$(date -u +%Y-%m-%d)"
-          count="$(curl -sS \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/check_and_process.yml/runs?created=%3E%3D${today}&per_page=100" \
-            | jq '.total_count')"
-          echo "Запусків check_and_process.yml сьогодні (включно з цим): $count"
-          if [ "$count" -gt 5 ]; then
-            echo "Ліміт 5 запусків/добу вичерпано — пропускаю обробку до завтра (UTC)."
+          total=0
+          for wf in check_and_process.yml publish.yml; do
+            count="$(curl -sS \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${wf}/runs?created=%3E%3D${today}&per_page=100" \
+              | jq '.total_count')"
+            echo "Запусків ${wf} сьогодні: $count"
+            total=$((total + count))
+          done
+          echo "Разом запусків пайплайну сьогодні (включно з цим): $total"
+          if [ "$total" -gt 5 ]; then
+            echo "Ліміт 5 запусків/добу на весь пайплайн вичерпано — пропускаю обробку до завтра (UTC)."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
