@@ -42,7 +42,7 @@ jobs:
             total=$((total + count))
           done
           echo "Разом запусків пайплайну сьогодні (включно з цим): $total"
-          if [ "$total" -gt 6 ]; then
+          if [ "$total" -gt 20 ]; then
             echo "Ліміт 5 запусків/добу на весь пайплайн вичерпано — пропускаю обробку до завтра (UTC)."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
