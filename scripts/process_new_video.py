@@ -135,6 +135,7 @@ def _generate_metadata_and_thumbnail(openai_client: OpenAI, video: dict, title: 
         headline=metadata["thumbnail_headline"],
         scene_hint=title,
         output_path=thumbnail_path,
+        variant_seed=video["video_id"],
     )
     print(f"[THUMBNAIL] {thumbnail_path}")
     return metadata

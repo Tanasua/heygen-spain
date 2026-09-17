@@ -20,6 +20,15 @@ on:
         description: "Тема відео (для антуражу)"
         type: string
         default: "avance de las tropas ucranianas en el frente"
+      variants:
+        description: "Які макети генерувати: 'all' або індекси через кому (0-8)"
+        type: string
+        default: "all"
+      quality:
+        description: "Якість (high ~$0.165/шт, medium ~$0.041/шт)"
+        type: choice
+        options: ["high", "medium"]
+        default: "high"
 
 permissions:
   contents: read
@@ -47,9 +56,13 @@ jobs:
           VIDEO_ID: ${{ inputs.video_id }}
           HEADLINE: ${{ inputs.headline }}
           SCENE_HINT: ${{ inputs.scene_hint }}
+          VARIANTS: ${{ inputs.variants }}
+          QUALITY: ${{ inputs.quality }}
         run: |
           python - <<'PY'
           import os
+          import traceback
+
           import requests
           from openai import OpenAI
           import thumbnail_generator
@@ -70,16 +83,37 @@ jobs:
           else:
               raise RuntimeError(f"Не вдалось узяти референсний кадр для {video_id}")
 
+          raw = os.environ["VARIANTS"].strip().lower()
+          if raw == "all":
+              indices = list(range(len(thumbnail_generator.VARIANTS)))
+          else:
+              indices = [int(x) for x in raw.split(",") if x.strip()]
+
           client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-          out_path = os.path.join(out_dir, f"{video_id}_thumb.jpg")
-          thumbnail_generator.generate_thumbnail(
-              client,
-              reference_image_path=ref_path,
-              headline=os.environ["HEADLINE"],
-              scene_hint=os.environ["SCENE_HINT"],
-              output_path=out_path,
-          )
-          print(f"[THUMBNAIL] {out_path} ({os.path.getsize(out_path) / 1024:.0f} KB)")
+          failed = []
+          for i in indices:
+              out_path = os.path.join(out_dir, f"variant_{i}.jpg")
+              try:
+                  thumbnail_generator.generate_thumbnail(
+                      client,
+                      reference_image_path=ref_path,
+                      headline=os.environ["HEADLINE"],
+                      scene_hint=os.environ["SCENE_HINT"],
+                      output_path=out_path,
+                      variant=i,
+                      quality=os.environ["QUALITY"],
+                  )
+                  print(f"[OK] variant_{i}.jpg ({os.path.getsize(out_path) / 1024:.0f} KB)")
+              except Exception as e:
+                  # Один невдалий макет не має ховати решту — збираємо всі,
+                  # а падаємо наприкінці, якщо взагалі нічого не вийшло.
+                  traceback.print_exc()
+                  failed.append((i, str(e)))
+
+          if failed:
+              print(f"[WARN] Не вийшли макети: {[i for i, _ in failed]}")
+          if len(failed) == len(indices):
+              raise RuntimeError("Жоден макет не згенерувався")
           PY
 
       - name: Upload result
