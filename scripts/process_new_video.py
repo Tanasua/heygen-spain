@@ -152,6 +152,7 @@ def process_video(video: dict, openai_client: OpenAI) -> None:
             video_id, title, duration, heygen_job_id,
             es_title=metadata["title"],
             es_description=metadata["description"],
+            es_tags=metadata.get("tags"),
             thumbnail_path=os.path.relpath(thumbnail_path, BASE_DIR),
         )
         telegram_notifier.notify_translating(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, title)

@@ -40,7 +40,7 @@ jobs:
             total=$((total + count))
           done
           echo "Разом запусків пайплайну сьогодні (включно з цим): $total"
-          if [ "$total" -gt 20 ]; then
+          if [ "$total" -gt 5 ]; then
             echo "Ліміт 5 запусків/добу на весь пайплайн вичерпано — пропускаю публікацію до завтра (UTC)."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
@@ -63,6 +63,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install ffmpeg (потрібен для перекодування відео під ліміт Telegram)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -72,9 +75,6 @@ jobs:
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          YOUTUBE_ES_CLIENT_ID: ${{ secrets.YOUTUBE_ES_CLIENT_ID }}
-          YOUTUBE_ES_CLIENT_SECRET: ${{ secrets.YOUTUBE_ES_CLIENT_SECRET }}
-          YOUTUBE_ES_REFRESH_TOKEN: ${{ secrets.YOUTUBE_ES_REFRESH_TOKEN }}
         run: python publish_pending.py
 
       - name: Commit updated state

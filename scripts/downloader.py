@@ -96,3 +96,31 @@ def transcode_smaller(input_path: str, output_path: str, max_height: int = 1080,
     after = os.path.getsize(output_path) / 1024 / 1024
     print(f"[transcode] {before:.1f} MB -> {after:.1f} MB")
     return output_path
+
+
+# Пайплайн віддає готове відео в Telegram (а не заливає на YouTube сам),
+# а Telegram Bot API приймає від бота файли не більші за 50 MB.
+TELEGRAM_LIMIT_MB = 49
+
+
+def ensure_telegram_size(video_path: str, work_dir: str, video_id: str) -> str:
+    """
+    Якщо файл більший за ліміт Telegram — перекодовує в менший (720p).
+    Повертає шлях до файлу, який реально треба надсилати (може співпадати
+    зі вхідним, якщо він і так влазить).
+    """
+    size_mb = os.path.getsize(video_path) / 1024 / 1024
+    if size_mb <= TELEGRAM_LIMIT_MB:
+        return video_path
+
+    print(f"[telegram] Файл {size_mb:.1f} MB > {TELEGRAM_LIMIT_MB} MB ліміту Telegram — перекодовую менше")
+    smaller_path = os.path.join(work_dir, f"{video_id}_tg.mp4")
+    transcode_smaller(video_path, smaller_path, max_height=720, crf=26)
+
+    new_size_mb = os.path.getsize(smaller_path) / 1024 / 1024
+    if new_size_mb > TELEGRAM_LIMIT_MB:
+        raise RuntimeError(
+            f"Навіть після перекодування файл {new_size_mb:.1f} MB "
+            f"перевищує ліміт Telegram {TELEGRAM_LIMIT_MB} MB"
+        )
+    return smaller_path

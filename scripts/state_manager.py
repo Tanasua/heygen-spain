@@ -4,19 +4,24 @@
 Структура запису:
 {
   "video_id": {
-    "status": "skipped" | "translating" | "published" | "failed",
+    "status": "skipped" | "translating" | "delivered" | "failed",
     "reason": "...",              # для skipped/failed
     "title_original": "...",
     "duration_seconds": 123,
-    "heygen_job_id": "...",       # для translating/published
+    "heygen_job_id": "...",       # для translating/delivered
     "es_title": "...",
     "es_description": "...",
+    "es_tags": ["...", "..."],
     "thumbnail_path": "...",      # обкладинка в репо (data/thumbnails/<id>.jpg)
-    "es_video_id": "...",         # для published
     "created_at": "ISO timestamp",
     "updated_at": "ISO timestamp"
   }
 }
+
+Пайплайн більше не заливає готове відео на YouTube сам — фінальний пакет
+(файл + обкладинка + заголовок/опис/теги) віддається в Telegram-чат для
+ручної публікації (див. telegram_notifier.send_for_manual_publish).
+Статус "delivered" означає саме це, а не "опубліковано на YouTube".
 """
 
 import json
@@ -65,7 +70,7 @@ def mark_skipped(video_id: str, title: str, duration_seconds: int, reason: str) 
 
 def mark_translating(video_id: str, title: str, duration_seconds: int,
                       heygen_job_id: str, es_title: str, es_description: str,
-                      thumbnail_path: str) -> None:
+                      thumbnail_path: str, es_tags: list[str] | None = None) -> None:
     state = load_state()
     state[video_id] = {
         "status": "translating",
@@ -74,6 +79,7 @@ def mark_translating(video_id: str, title: str, duration_seconds: int,
         "heygen_job_id": heygen_job_id,
         "es_title": es_title,
         "es_description": es_description,
+        "es_tags": es_tags or [],
         "thumbnail_path": thumbnail_path,
         "created_at": _now(),
         "updated_at": _now(),
@@ -81,11 +87,11 @@ def mark_translating(video_id: str, title: str, duration_seconds: int,
     save_state(state)
 
 
-def mark_published(video_id: str, es_video_id: str) -> None:
+def mark_delivered(video_id: str) -> None:
+    """Готовий пакет (файл+обкладинка+метадані) віддано в Telegram для ручної публікації."""
     state = load_state()
     if video_id in state:
-        state[video_id]["status"] = "published"
-        state[video_id]["es_video_id"] = es_video_id
+        state[video_id]["status"] = "delivered"
         state[video_id]["updated_at"] = _now()
         save_state(state)
 
