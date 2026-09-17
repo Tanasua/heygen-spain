@@ -19,9 +19,11 @@ Genera:
 1. Un título en español, máximo 100 caracteres, estilo clickbait de noticias de guerra.
 2. Una descripción en español de 3-5 líneas, con 3-5 hashtags relevantes al final.
 3. Una frase corta (5-8 palabras) en español para usar como texto de portada/miniatura.
+4. Una lista de 8-12 etiquetas (tags) en español para el campo "tags" de YouTube —
+   palabras o frases cortas SIN el símbolo #, relevantes al tema del video.
 
 Responde ÚNICAMENTE en formato JSON, sin texto adicional, con esta estructura exacta:
-{{"title": "...", "description": "...", "thumbnail_headline": "..."}}"""
+{{"title": "...", "description": "...", "thumbnail_headline": "...", "tags": ["...", "..."]}}"""
 
 
 def generate_spanish_metadata(client: OpenAI, original_title: str) -> dict:
@@ -38,7 +40,7 @@ def generate_spanish_metadata(client: OpenAI, original_title: str) -> dict:
     content = response.choices[0].message.content
     data = json.loads(content)
 
-    required_keys = {"title", "description", "thumbnail_headline"}
+    required_keys = {"title", "description", "thumbnail_headline", "tags"}
     if not required_keys.issubset(data.keys()):
         raise ValueError(f"Відповідь OpenAI не містить очікуваних полів: {data}")
 

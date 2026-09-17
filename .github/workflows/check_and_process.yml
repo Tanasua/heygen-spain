@@ -64,18 +64,13 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           # "heygen" (ліп-синк, дорожче, асинхронно) або "inworld" (без
-          # ліп-синку, дешевше, публікує одразу тут — див. README).
+          # ліп-синку, дешевше, віддає пакет у Telegram одразу тут — див. README).
           # За розкладом (cron) завжди "heygen"; провайдер "inworld" можна
           # обрати лише вручну через workflow_dispatch (кнопка Run workflow).
           DUB_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.dub_provider || 'heygen' }}
           MAX_VIDEOS_PER_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.max_videos || '0' }}
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
           INWORLD_API_KEY: ${{ secrets.INWORLD_API_KEY }}
-          # Потрібні тільки для DUB_PROVIDER=inworld (заливка на YouTube
-          # відбувається одразу тут, а не у Workflow 2).
-          YOUTUBE_ES_CLIENT_ID: ${{ secrets.YOUTUBE_ES_CLIENT_ID }}
-          YOUTUBE_ES_CLIENT_SECRET: ${{ secrets.YOUTUBE_ES_CLIENT_SECRET }}
-          YOUTUBE_ES_REFRESH_TOKEN: ${{ secrets.YOUTUBE_ES_REFRESH_TOKEN }}
           # 0 = вимкнено. Постав 1080, щоб зменшувати файл перед передачею (тільки heygen-шлях).
           TRANSCODE_MAX_HEIGHT: "0"
           FETCH_TIMEOUT_SECONDS: "2700"
