@@ -11,6 +11,11 @@ import subprocess
 COOKIES_ENV_VAR = "YOUTUBE_COOKIES"
 COOKIES_PATH = "/tmp/yt_cookies.txt"
 
+# Резидентний/ISP-проксі — без нього навіть свіжі cookies не завжди рятують
+# від "Sign in to confirm you're not a bot" з датацентр-IP GitHub Actions.
+# Формат: http://user:pass@host:port або socks5://user:pass@host:port.
+PROXY_ENV_VAR = "YT_DLP_PROXY_URL"
+
 
 def _prepare_cookies_file() -> str | None:
     """Пише cookies з env у тимчасовий файл. Повертає шлях або None, якщо секрет не заданий."""
@@ -40,6 +45,10 @@ def download_video(video_url: str, output_dir: str, video_id: str) -> str:
     cookies_path = _prepare_cookies_file()
     if cookies_path:
         cmd += ["--cookies", cookies_path]
+
+    proxy_url = os.environ.get(PROXY_ENV_VAR)
+    if proxy_url:
+        cmd += ["--proxy", proxy_url]
 
     cmd.append(video_url)
 
