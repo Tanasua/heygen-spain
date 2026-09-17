@@ -1,0 +1,90 @@
+name: Test Thumbnail (dev)
+
+# Допоміжний workflow для налаштування промпта обкладинки: генерує ТІЛЬКИ
+# обкладинку і віддає її артефактом. Нічого не публікує і не чіпає стан —
+# щоб не гнати повний пайплайн (і не заливати відео на канал) заради
+# перегляду однієї картинки.
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: "YouTube video ID, з якого взяти референсний кадр"
+        type: string
+        default: "rNV9M_K3SDo"
+      headline:
+        description: "Заголовок для обкладинки (іспанською)"
+        type: string
+        default: "UCRANIA AVANZA: RUSOS HUYEN DEL FRENTE"
+      scene_hint:
+        description: "Тема відео (для антуражу)"
+        type: string
+        default: "avance de las tropas ucranianas en el frente"
+
+permissions:
+  contents: read
+
+jobs:
+  thumbnail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate thumbnail
+        working-directory: scripts
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VIDEO_ID: ${{ inputs.video_id }}
+          HEADLINE: ${{ inputs.headline }}
+          SCENE_HINT: ${{ inputs.scene_hint }}
+        run: |
+          python - <<'PY'
+          import os
+          import requests
+          from openai import OpenAI
+          import thumbnail_generator
+
+          video_id = os.environ["VIDEO_ID"]
+          out_dir = "../out"
+          os.makedirs(out_dir, exist_ok=True)
+          ref_path = os.path.join(out_dir, "reference.jpg")
+
+          # maxresdefault є не в кожного відео — падаємо на hqdefault
+          for name in ("maxresdefault", "hqdefault"):
+              r = requests.get(f"https://img.youtube.com/vi/{video_id}/{name}.jpg", timeout=30)
+              if r.ok and len(r.content) > 5000:
+                  with open(ref_path, "wb") as f:
+                      f.write(r.content)
+                  print(f"[REF] {name}.jpg ({len(r.content) / 1024:.0f} KB)")
+                  break
+          else:
+              raise RuntimeError(f"Не вдалось узяти референсний кадр для {video_id}")
+
+          client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+          out_path = os.path.join(out_dir, f"{video_id}_thumb.jpg")
+          thumbnail_generator.generate_thumbnail(
+              client,
+              reference_image_path=ref_path,
+              headline=os.environ["HEADLINE"],
+              scene_hint=os.environ["SCENE_HINT"],
+              output_path=out_path,
+          )
+          print(f"[THUMBNAIL] {out_path} ({os.path.getsize(out_path) / 1024:.0f} KB)")
+          PY
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: thumbnail
+          path: out/
+          retention-days: 7
