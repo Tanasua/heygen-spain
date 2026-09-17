@@ -1472,5 +1472,28 @@
     "thumbnail_path": "data/thumbnails/U6xGX56z9uM.jpg",
     "created_at": "2026-09-17T06:59:17.680378+00:00",
     "updated_at": "2026-09-17T06:59:17.680394+00:00"
+  },
+  "rNV9M_K3SDo": {
+    "status": "translating",
+    "title_original": "СРОЧНО! Украина ждет список от Кремля: МИД официально подтвердил готовность к перемирию!",
+    "duration_seconds": 242,
+    "heygen_job_id": "553e1c312b2e49b3800da71982fb461d-es",
+    "es_title": "¡URGENTE! Ucrania ESPERA la LISTA del Kremlin: ¡CONFIRMADA voluntad de ALTO EL FUEGO!",
+    "es_description": "¡Atención! El Ministerio de Exteriores de Ucrania CONFIRMÓ su disposición oficial para un posible alto el fuego y ahora aguarda la respuesta formal del Kremlin. ¿Se acerca el FIN de los combates? Todos los detalles en este informe especial. #Ucrania #Rusia #Guerra #Paz #ÚltimaHora",
+    "thumbnail_path": "data/thumbnails/rNV9M_K3SDo.jpg",
+    "created_at": "2026-09-17T09:08:05.637181+00:00",
+    "updated_at": "2026-09-17T09:08:05.637197+00:00"
+  },
+  "cgSlowzAyvk": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=cgSlowzAyvk:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] cgSlowzAyvk: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
+    "created_at": "2026-09-17T09:08:09.380765+00:00",
+    "updated_at": "2026-09-17T09:08:09.380779+00:00"
+  },
+  "F9xoz-0zFjw": {
+    "status": "failed",
+    "reason": "yt-dlp помилка для https://www.youtube.com/watch?v=F9xoz-0zFjw:\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] The provided YouTube account cookies are no longer valid. They have likely been rotated in the browser as a security measure. For tips on how to effectively export YouTube cookies, refer to  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies .\nWARNING: [youtube] No title found in player responses; falling back to title from initial data. Other metadata may also be missing\nERROR: [youtube] F9xoz-0zFjw: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies\n",
+    "created_at": "2026-09-17T09:08:13.039688+00:00",
+    "updated_at": "2026-09-17T09:08:13.039703+00:00"
   }
 }
