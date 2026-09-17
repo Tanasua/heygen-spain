@@ -19,10 +19,18 @@ import base64
 import hashlib
 from io import BytesIO
 
+import requests
 from openai import OpenAI
 from PIL import Image
 
 CANVAS_SIZE = (1280, 720)  # стандарт YouTube 16:9
+
+# Ходимо в Images API напряму, а не через SDK. Причина конкретна: gpt-image-2
+# з параметром quality не проходить через openai==1.51.0, а підняти SDK до
+# 2.x не можна — там Whisper (audio.transcriptions) починає віддавати 404 і
+# весь дубляж падає (перевірено на реальному прогоні). REST-контракт від
+# версії SDK не залежить, тож так стабільніше.
+IMAGES_EDIT_URL = "https://api.openai.com/v1/images/edits"
 
 # 1536x1024 (3:2) обрізався до 16:9 кропом 80px зверху/знизу і зрізав нижній
 # рядок напису. "1568x896" — ratio 1.75 (майже 16:9=1.778), кроп ~7px.
@@ -187,15 +195,21 @@ def generate_thumbnail(client: OpenAI, reference_image_path: str, headline: str,
     )
 
     with open(reference_image_path, "rb") as f:
-        result = client.images.edit(
-            model="gpt-image-2",
-            image=f,
-            prompt=prompt,
-            size=GEN_SIZE,
-            quality=quality,
+        resp = requests.post(
+            IMAGES_EDIT_URL,
+            headers={"Authorization": f"Bearer {client.api_key}"},
+            data={
+                "model": "gpt-image-2",
+                "prompt": prompt,
+                "size": GEN_SIZE,
+                "quality": quality,
+            },
+            files={"image": ("reference.jpg", f, "image/jpeg")},
+            timeout=300,
         )
+    resp.raise_for_status()
 
-    image_bytes = base64.b64decode(result.data[0].b64_json)
+    image_bytes = base64.b64decode(resp.json()["data"][0]["b64_json"])
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
     img = _to_16_9(img)
     img.save(output_path, "JPEG", quality=92)
