@@ -1450,5 +1450,27 @@
     "created_at": "2026-09-16T20:38:38.431712+00:00",
     "updated_at": "2026-09-17T01:22:37.508678+00:00",
     "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
+  },
+  "nJL-Ix1-Q-0": {
+    "status": "translating",
+    "title_original": "СРОЧНО! Энергетический ШАНТАЖ РФ: на что готова Украина ради деэскалации",
+    "duration_seconds": 997,
+    "heygen_job_id": "b18bee89f5ac4b07815d595d8aa70c9b-es",
+    "es_title": "¡URGENTE! Rusia USA el GAS como ARMA: ¿Cederá Ucrania al CHANTAJE ENERGÉTICO?",
+    "es_description": "Rusia intensifica el chantaje energético cortando el suministro de gas. Ucrania enfrenta decisiones difíciles para evitar una escalada mayor. ¿Hasta dónde está dispuesta a llegar por la paz? Detalles IMPACTANTES en este informe. #Ucrania #Rusia #Guerra #Gas #CrisisEnergética",
+    "thumbnail_path": "data/thumbnails/nJL-Ix1-Q-0.jpg",
+    "created_at": "2026-09-17T06:54:02.644624+00:00",
+    "updated_at": "2026-09-17T06:54:02.644639+00:00"
+  },
+  "U6xGX56z9uM": {
+    "status": "translating",
+    "title_original": "УДАРЫ ПО НПЗ РФ УСИЛЯТСЯ?! Планы Украины и Кремля — РАСКРЫТЫ!",
+    "duration_seconds": 781,
+    "heygen_job_id": "fbdcb2209a8f4ed0a9a9e2f1d3ff3943-es",
+    "es_title": "¡IMPACTANTE! ¿SE INTENSIFICAN LOS ATAQUES UCRANIANOS A REFINERÍAS RUSAS? PLANES FILTRADOS",
+    "es_description": "¡Última hora! Se revelan los planes secretos de Ucrania y Rusia sobre los ataques a las refinerías. ¿Se avecina una nueva ola de bombardeos? Analizamos lo que significa para el conflicto y las posibles respuestas del Kremlin. #Ucrania #Rusia #GuerraUcrania #NoticiaUrgente #Refinerías",
+    "thumbnail_path": "data/thumbnails/U6xGX56z9uM.jpg",
+    "created_at": "2026-09-17T06:59:17.680378+00:00",
+    "updated_at": "2026-09-17T06:59:17.680394+00:00"
   }
 }
