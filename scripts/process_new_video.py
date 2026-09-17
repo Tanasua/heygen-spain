@@ -40,10 +40,11 @@ OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
-# "heygen" (типово) — ліп-синк через HeyGen v3 API, асинхронно (Workflow 2 віддає
-# готовий пакет у Telegram). "inworld" — DIY-дубляж без ліп-синку (Whisper + GPT +
-# Inworld TTS), синхронно, готовий пакет віддається у Telegram одразу тут.
-DUB_PROVIDER = os.environ.get("DUB_PROVIDER", "heygen")
+# "inworld" (типово) — DIY-дубляж без ліп-синку (Whisper + GPT + Inworld TTS),
+# синхронно, готовий пакет віддається у Telegram одразу тут. "heygen" (ліп-синк,
+# ~$4/хв — надто дорого для щоденного продакшну) лишається ручним фолбеком:
+# асинхронно, Workflow 2 віддає готовий пакет пізніше.
+DUB_PROVIDER = os.environ.get("DUB_PROVIDER", "inworld")
 
 HEYGEN_API_KEY = os.environ.get("HEYGEN_API_KEY")
 INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY")
