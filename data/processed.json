@@ -1428,7 +1428,7 @@
     "updated_at": "2026-09-16T17:40:14.970939+00:00"
   },
   "KH5w7I3AQUE": {
-    "status": "translating",
+    "status": "failed",
     "title_original": "ЭТО СЛУЧИТСЯ СРАЗУ ПОСЛЕ \"ВЫБОРОВ\"! Путин готовит жесткий удар!",
     "duration_seconds": 1094,
     "heygen_job_id": "00cc24b38e924def930a70c379a8fabc-es",
@@ -1436,10 +1436,11 @@
     "es_description": "¡Atención! Después de las elecciones, Putin planea un golpe contundente que podría cambiar el rumbo de la guerra en Ucrania. Analizamos las posibles acciones y sus consecuencias inmediatas. ¿Está el mundo preparado? No te pierdas este impactante informe. #Ucrania #Putin #ÚltimaHora #Guerra #Rusia",
     "thumbnail_path": "data/thumbnails/KH5w7I3AQUE.jpg",
     "created_at": "2026-09-16T20:34:57.136619+00:00",
-    "updated_at": "2026-09-16T20:34:57.136635+00:00"
+    "updated_at": "2026-09-17T01:22:36.844929+00:00",
+    "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
   },
   "szhGj_XUNek": {
-    "status": "translating",
+    "status": "failed",
     "title_original": "ЭКСТРЕННО из Германии! РФ атаковала Европу?!",
     "duration_seconds": 219,
     "heygen_job_id": "58783e6c459241debea537661d5a07ed-es",
@@ -1447,6 +1448,7 @@
     "es_description": "¡Noticia de última hora desde Alemania! Se reportan ataques desde Rusia que ponen en alerta a toda Europa. ¿Estamos ante una nueva escalada en el conflicto? Te contamos TODO lo que se sabe hasta el momento. #Ucrania #Rusia #Europa #Guerra #ÚltimaHora",
     "thumbnail_path": "data/thumbnails/szhGj_XUNek.jpg",
     "created_at": "2026-09-16T20:38:38.431712+00:00",
-    "updated_at": "2026-09-16T20:38:38.431729+00:00"
+    "updated_at": "2026-09-17T01:22:37.508678+00:00",
+    "reason": "HeyGen job failed: Insufficient credit. This operation requires 'api' credits."
   }
 }
