@@ -1,8 +1,15 @@
 name: Publish Translated Videos
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # Schedule вимкнено: DUB_PROVIDER=inworld (типовий, дешевий шлях) віддає
+  # готовий пакет у Telegram синхронно прямо в check_and_process.yml, тож
+  # цьому workflow (опрацювання чергу HeyGen-job'ів) за розкладом уже
+  # нема чого робити щоразу — навіщо витрачати спільний ліміт 5/добу на
+  # холості прогони. Лишається доступний вручну — знадобиться, якщо
+  # колись свідомо запустити ручний HeyGen-фолбек (workflow_dispatch,
+  # dub_provider=heygen, у check_and_process.yml).
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 permissions:

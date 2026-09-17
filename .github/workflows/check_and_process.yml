@@ -3,7 +3,17 @@ name: Check & Process New Videos
 on:
   schedule:
     - cron: "*/30 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dub_provider:
+        description: "Провайдер дубляжу для цього ручного запуску"
+        type: choice
+        options: ["inworld", "heygen"]
+        default: "inworld"
+      max_videos:
+        description: "Ліміт кількості нових відео за цей запуск (0 = без ліміту)"
+        type: string
+        default: "0"
 
 permissions:
   contents: write
@@ -87,10 +97,15 @@ jobs:
           YT_DLP_PROXY_URL: ${{ secrets.YT_DLP_PROXY_URL }}
           SOURCE_CHANNEL_HANDLE: "@GlavredTV"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # 0 = вимкнено. Постав 1080, щоб зменшувати файл перед передачею.
+          # "inworld" (типово, дешево) або "heygen" (ліп-синк, ~$4/хв — лише
+          # ручний фолбек через workflow_dispatch, за розкладом не вмикається).
+          DUB_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.dub_provider || 'inworld' }}
+          MAX_VIDEOS_PER_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.max_videos || '0' }}
+          INWORLD_API_KEY: ${{ secrets.INWORLD_API_KEY }}
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+          # 0 = вимкнено. Постав 1080, щоб зменшувати файл перед передачею (тільки heygen-шлях).
           TRANSCODE_MAX_HEIGHT: "0"
           FETCH_TIMEOUT_SECONDS: "2700"
         run: python process_new_video.py
