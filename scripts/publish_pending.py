@@ -6,9 +6,8 @@
 2. Якщо запис "застряг" довше STALE_AFTER_HOURS — позначити failed і
    прибрати обкладинку (інакше висів би вічно, а presigned URL все одно згорить).
 3. Перевірити статус job у HeyGen.
-4. Якщо completed -> завантажити перекладене відео + обкладинку -> віддати
-   пакет (файл+обкладинка+метадані) у Telegram для ручної публікації ->
-   mark_delivered -> прибрати обкладинку.
+4. Якщо completed -> завантажити перекладене відео + обкладинку -> залити
+   на іспанський канал -> mark_published + Telegram -> прибрати обкладинку.
 5. Якщо failed -> mark_failed + Telegram + прибрати обкладинку.
 6. Якщо pending/running -> нічого не робити, повернемось наступного разу.
 """
@@ -19,12 +18,16 @@ from datetime import datetime, timezone, timedelta
 
 import state_manager
 import heygen_client
-import downloader
+import youtube_uploader
 import telegram_notifier
 
 HEYGEN_API_KEY = os.environ["HEYGEN_API_KEY"]
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+
+YT_CLIENT_ID = os.environ["YOUTUBE_ES_CLIENT_ID"]
+YT_CLIENT_SECRET = os.environ["YOUTUBE_ES_CLIENT_SECRET"]
+YT_REFRESH_TOKEN = os.environ["YOUTUBE_ES_REFRESH_TOKEN"]
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 WORK_DIR = os.path.join(BASE_DIR, "tmp")
@@ -115,23 +118,24 @@ def handle_pending(video_id: str, record: dict) -> None:
                 # Без обкладинки публікуємо все одно — YouTube візьме автокадр.
                 print(f"[WARN] Обкладинку не знайдено: {candidate}")
 
-        # Готуємо файл під ліміт Telegram і віддаємо пакет для ручної публікації
-        telegram_ready_path = downloader.ensure_telegram_size(translated_path, WORK_DIR, video_id)
-        telegram_notifier.send_for_manual_publish(
-            TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-            video_path=telegram_ready_path,
-            thumbnail_path=local_thumbnail,
+        # Заливаємо на іспанський канал
+        es_video_id = youtube_uploader.upload_video(
+            YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN,
+            video_path=translated_path,
             title=record["es_title"],
             description=record["es_description"],
+            thumbnail_path=local_thumbnail,
             tags=record.get("es_tags"),
         )
-        if telegram_ready_path != translated_path and os.path.exists(telegram_ready_path):
-            os.remove(telegram_ready_path)
 
-        state_manager.mark_delivered(video_id)
-        print(f"[DELIVERED] {video_id} -> Telegram")
+        state_manager.mark_published(video_id, es_video_id)
+        telegram_notifier.notify_published(
+            TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
+            record["es_title"], f"https://www.youtube.com/watch?v={es_video_id}"
+        )
+        print(f"[PUBLISHED] {video_id} -> {es_video_id}")
 
-        # Обкладинка вже надіслана — прибираємо з репо, щоб він не розпухав
+        # Обкладинка вже на YouTube — прибираємо з репо, щоб він не розпухав
         if local_thumbnail and os.path.exists(local_thumbnail):
             os.remove(local_thumbnail)
             print(f"[CLEANUP] Видалено {rel_path}")

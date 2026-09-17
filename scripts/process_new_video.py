@@ -29,6 +29,7 @@ import heygen_client
 import tunnel_server
 import cloudflared_tunnel
 import dub_pipeline
+import youtube_uploader
 import thumbnail_generator
 import metadata_generator
 import telegram_notifier
@@ -41,17 +42,25 @@ TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 # "inworld" (типово) — DIY-дубляж без ліп-синку (Whisper + GPT + Inworld TTS),
-# синхронно, готовий пакет віддається у Telegram одразу тут. HeyGen (ліп-синк,
+# синхронно, заливка на іспанський канал одразу тут. HeyGen (ліп-синк,
 # ~$4/хв) вимкнено за замовчуванням через ціну — залишений як ручний фолбек
-# (workflow_dispatch, DUB_PROVIDER=heygen), Workflow 2 віддає пакет пізніше.
+# (workflow_dispatch, DUB_PROVIDER=heygen), Workflow 2 публікує пізніше.
 DUB_PROVIDER = os.environ.get("DUB_PROVIDER", "inworld")
 
 HEYGEN_API_KEY = os.environ.get("HEYGEN_API_KEY")
 INWORLD_API_KEY = os.environ.get("INWORLD_API_KEY")
+YT_ES_CLIENT_ID = os.environ.get("YOUTUBE_ES_CLIENT_ID")
+YT_ES_CLIENT_SECRET = os.environ.get("YOUTUBE_ES_CLIENT_SECRET")
+YT_ES_REFRESH_TOKEN = os.environ.get("YOUTUBE_ES_REFRESH_TOKEN")
 
 if DUB_PROVIDER == "inworld":
     if not INWORLD_API_KEY:
         raise RuntimeError("DUB_PROVIDER=inworld вимагає секрет INWORLD_API_KEY")
+    if not (YT_ES_CLIENT_ID and YT_ES_CLIENT_SECRET and YT_ES_REFRESH_TOKEN):
+        raise RuntimeError(
+            "DUB_PROVIDER=inworld заливає відео одразу у Workflow 1 — потрібні "
+            "YOUTUBE_ES_CLIENT_ID/YOUTUBE_ES_CLIENT_SECRET/YOUTUBE_ES_REFRESH_TOKEN"
+        )
 elif not HEYGEN_API_KEY:
     raise RuntimeError("DUB_PROVIDER=heygen вимагає секрет HEYGEN_API_KEY")
 
@@ -165,11 +174,9 @@ def _process_with_heygen(video: dict, openai_client: OpenAI, video_id: str, titl
 def _process_with_inworld(video: dict, openai_client: OpenAI, video_id: str, title: str,
                            duration: int, video_path: str, thumb_ref_path: str,
                            thumbnail_path: str) -> None:
-    """DIY-дубляж без ліп-синку — усе синхронно в межах Workflow 1, пакет
-    (файл + обкладинка + метадані) одразу віддається в Telegram для ручної
-    публікації."""
+    """DIY-дубляж без ліп-синку — усе синхронно в межах Workflow 1, заливка
+    на іспанський канал одразу тут."""
     dubbed_path = None
-    telegram_ready_path = None
     try:
         dubbed_path = dub_pipeline.translate_video(
             openai_client, INWORLD_API_KEY, video_path, WORK_DIR, video_id,
@@ -181,13 +188,12 @@ def _process_with_inworld(video: dict, openai_client: OpenAI, video_id: str, tit
         metadata = _generate_metadata_and_thumbnail(openai_client, video, title,
                                                       thumb_ref_path, thumbnail_path)
 
-        telegram_ready_path = downloader.ensure_telegram_size(dubbed_path, WORK_DIR, video_id)
-        telegram_notifier.send_for_manual_publish(
-            TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-            video_path=telegram_ready_path,
-            thumbnail_path=thumbnail_path,
+        es_video_id = youtube_uploader.upload_video(
+            YT_ES_CLIENT_ID, YT_ES_CLIENT_SECRET, YT_ES_REFRESH_TOKEN,
+            video_path=dubbed_path,
             title=metadata["title"],
             description=metadata["description"],
+            thumbnail_path=thumbnail_path,
             tags=metadata.get("tags"),
         )
 
@@ -198,14 +204,17 @@ def _process_with_inworld(video: dict, openai_client: OpenAI, video_id: str, tit
             es_tags=metadata.get("tags"),
             thumbnail_path=os.path.relpath(thumbnail_path, BASE_DIR),
         )
-        state_manager.mark_delivered(video_id)
-        print(f"[DELIVERED] {video_id} -> Telegram")
+        state_manager.mark_published(video_id, es_video_id)
+        telegram_notifier.notify_published(
+            TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
+            metadata["title"], f"https://www.youtube.com/watch?v={es_video_id}"
+        )
+        print(f"[PUBLISHED] {video_id} -> {es_video_id}")
 
         if os.path.exists(thumbnail_path):
             os.remove(thumbnail_path)
     finally:
-        _cleanup([video_path, dubbed_path,
-                  telegram_ready_path if telegram_ready_path != dubbed_path else None])
+        _cleanup([video_path, dubbed_path])
 
 
 def process_video(video: dict, openai_client: OpenAI) -> bool:
