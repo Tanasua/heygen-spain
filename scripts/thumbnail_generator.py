@@ -1,112 +1,121 @@
 """
-Генерація обкладинки для іспанського відео.
+Генерація обкладинки одним запитом до gpt-image-2.
 
-Підхід (навмисно, а не "все одним промптом"):
-1. OpenAI Images API (gpt-image-1) генерує ФОН/СЦЕНУ на основі оригінального
-   thumbnail як референсу — без тексту в промпті.
-2. Текст заголовка накладається окремо через Pillow — це надійніше, бо
-   image-моделі часто спотворюють текст (особливо з іспанськими діакритиками:
-   á, é, í, ó, ú, ñ, ¡, ¿).
+Раніше було два кроки: gpt-image-1 малював фон, а заголовок накладався
+через Pillow. Виходило плоско й аматорськи — рівний жовтий текст із
+обводкою, наліплений поверх картинки.
 
-Якщо хочете спробувати "все одним промптом" (як у вашому оригінальному
-формулюванні) — розкоментуйте generate_thumbnail_single_prompt() і
-використовуйте її замість generate_thumbnail_background(). Але майте на увазі
-ризик кривого/нечитабельного тексту.
+Тепер один запит до gpt-image-2 робить усе разом: бере оригінальний
+YouTube-thumbnail як референс (ті самі люди/об'єкти), домальовує сцену і
+одразу вбудовує об'ємний заголовок як частину композиції.
+
+Стиль орієнтований на українські новинні YouTube-канали (УНІАН тощо) —
+з реальних обкладинок зчитано: двоколірний напис (білий рядок + жовтий
+"ударний" рядок), важкий вузький гротеск ALL CAPS, товста чорна обводка з
+тінню, вирізані фігури персонажів на драматичному фоні, білий контровий
+світловий контур, який відділяє фігури від фону.
+
+Логотипи/брендинг реальних каналів навмисно НЕ відтворюються.
 """
 
 import base64
-import os
 from io import BytesIO
 
 from openai import OpenAI
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 CANVAS_SIZE = (1280, 720)  # стандарт YouTube 16:9
 
+# 1536x1024 (3:2) обрізався до 16:9 кропом 80px зверху/знизу і зрізав нижній
+# рядок напису. "1568x896" — ratio 1.75 (майже 16:9=1.778), кроп ~7px.
+GEN_SIZE = "1568x896"
 
-def generate_thumbnail_background(client: OpenAI, reference_image_path: str, scene_hint: str) -> Image.Image:
-    """
-    Генерує фонове зображення 16:9 на основі референсного кадру.
-    scene_hint — короткий опис теми відео (наприклад, "ataque de misiles en la ciudad").
-    """
-    with open(reference_image_path, "rb") as f:
-        result = client.images.edit(
-            model="gpt-image-1",
-            image=f,
-            prompt=(
-                f"Analiza esta imagen y crea una nueva escena de fondo estilo miniatura "
-                f"clickbait de noticias de guerra, formato 16:9, dramática, alto contraste, "
-                f"colores saturados (rojo, naranja, negro), sin ningún texto ni letras. "
-                f"Tema: {scene_hint}."
-            ),
-            size="1536x1024",
-        )
+STYLE_PROMPT = """\
+Usa esta imagen como referencia y crea una miniatura de YouTube de noticias \
+en el estilo visual de los canales informativos ucranianos (tipo UNIAN).
 
-    image_b64 = result.data[0].b64_json
-    image_bytes = base64.b64decode(image_b64)
-    img = Image.open(BytesIO(image_bytes)).convert("RGB")
-    img = img.resize(CANVAS_SIZE)
-    return img
+PERSONAJES: mantén EXACTAMENTE a las mismas personas y objetos de la imagen \
+de referencia — misma cara, misma persona reconocible. Recórtalos del fondo \
+y compón la escena como un collage de noticias: la figura principal grande y \
+nítida en un lado del encuadre. NO inventes personas que no estén en la \
+referencia.
 
+ILUMINACIÓN (importante): aplica una luz de contorno BLANCA e intensa detrás \
+de las figuras principales — un halo de contraluz blanco que recorta la \
+silueta y la separa claramente del fondo. Efecto de rim light blanco \
+profesional, no un resplandor difuso.
 
-def add_headline_text(img: Image.Image, headline: str, font_path: str = None) -> Image.Image:
-    """
-    Накладає клікбейт-заголовок у стилі зразків: жирний шрифт, жовтий/білий
-    текст із чорною обводкою, у нижній третині кадру.
-    """
-    img = img.copy()
-    draw = ImageDraw.Draw(img)
+FONDO: escena dramática relacionada con el tema — humo, fuego, explosión \
+lejana, cielo oscuro, o escenario urbano/militar. Alto contraste, colores \
+saturados pero no chillones. El fondo debe estar ligeramente desenfocado \
+para que las figuras destaquen.
 
-    font_size = 90
-    if font_path and os.path.exists(font_path):
-        font = ImageFont.truetype(font_path, font_size)
-    else:
-        # Fallback: якщо кастомний жирний шрифт не підключено, беремо стандартний.
-        # РЕКОМЕНДАЦІЯ: покладіть .ttf жирного шрифту (напр. Montserrat-ExtraBold)
-        # у папку assets/fonts/ і вкажіть шлях у font_path.
-        font = ImageFont.load_default()
+TITULAR — renderízalo como texto real, legible, integrado en la composición \
+(NO lo describas): en MAYÚSCULAS, tipografía sans-serif condensada muy \
+pesada (tipo Druk/Impact), con VOLUMEN: letras con extrusión 3D sutil, borde \
+negro grueso y sombra proyectada, como rótulo diseñado profesionalmente. \
+Divide el titular en 2 líneas: la primera línea en BLANCO y la segunda \
+línea (la más impactante) en AMARILLO intenso (#FFD400). Colócalo en el \
+tercio inferior o centrado abajo, ocupando buena parte del ancho.
 
-    max_width = CANVAS_SIZE[0] - 80
-    lines = _wrap_text(draw, headline.upper(), font, max_width)
+El titular exacto, respetando tildes y signos españoles (á é í ó ú ñ ¡ ¿):
 
-    line_height = font_size + 10
-    total_height = line_height * len(lines)
-    y = CANVAS_SIZE[1] - total_height - 40
+"{headline}"
 
-    for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font)
-        text_width = bbox[2] - bbox[0]
-        x = (CANVAS_SIZE[0] - text_width) / 2
+TONO: clickbait moderado y profesional — llamativo pero creíble, como un \
+medio informativo serio, NO exagerado ni caricaturesco.
 
-        # Обводка (stroke) для читабельності на будь-якому фоні
-        draw.text((x, y), line, font=font, fill="#FFD400",
-                   stroke_width=6, stroke_fill="black")
-        y += line_height
+MARGEN DE SEGURIDAD: deja al menos un 8% del alto totalmente libre arriba Y \
+abajo (sin texto ni partes de caras pegadas al borde) — esa franja se recorta \
+después para ajustar a 16:9.
 
-    return img
+Contexto del video (solo para ambientación, no agregues elementos nuevos): \
+{scene_hint}
+
+Formato 16:9. Sin marcas de agua, sin logotipos de canales reales, sin texto \
+adicional aparte del titular indicado.\
+"""
 
 
-def _wrap_text(draw, text: str, font, max_width: int) -> list[str]:
-    words = text.split()
-    lines = []
-    current = ""
-    for word in words:
-        test = f"{current} {word}".strip()
-        bbox = draw.textbbox((0, 0), test, font=font)
-        if bbox[2] - bbox[0] <= max_width:
-            current = test
-        else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines
+def _to_16_9(img: Image.Image) -> Image.Image:
+    """Дотягує до 16:9. Вертикальний кроп бере переважно зверху — заголовок
+    у нижній третині, тож краще жертвувати верхом фону, ніж низом тексту."""
+    target_ratio = CANVAS_SIZE[0] / CANVAS_SIZE[1]
+    w, h = img.size
+    current_ratio = w / h
+    if current_ratio > target_ratio:
+        new_w = round(h * target_ratio)
+        left = (w - new_w) // 2
+        img = img.crop((left, 0, left + new_w, h))
+    elif current_ratio < target_ratio:
+        new_h = round(w / target_ratio)
+        removed = h - new_h
+        top = round(removed * 0.85)
+        img = img.crop((0, top, w, top + new_h))
+    return img.resize(CANVAS_SIZE)
 
 
 def generate_thumbnail(client: OpenAI, reference_image_path: str, headline: str,
-                        scene_hint: str, output_path: str, font_path: str = None) -> str:
-    bg = generate_thumbnail_background(client, reference_image_path, scene_hint)
-    final = add_headline_text(bg, headline, font_path=font_path)
-    final.save(output_path, "JPEG", quality=92)
+                        scene_hint: str, output_path: str, quality: str = "high") -> str:
+    """
+    Один запит до gpt-image-2: перекомпоновує референсний кадр у новинний
+    колаж із контровим світлом і вбудованим об'ємним заголовком.
+    quality="high" (~$0.165/зображення) можна знизити до "medium" (~$0.041),
+    якщо вартість важливіша за якість.
+    """
+    prompt = STYLE_PROMPT.format(headline=headline.upper(), scene_hint=scene_hint)
+
+    with open(reference_image_path, "rb") as f:
+        result = client.images.edit(
+            model="gpt-image-2",
+            image=f,
+            prompt=prompt,
+            size=GEN_SIZE,
+            quality=quality,
+        )
+
+    image_bytes = base64.b64decode(result.data[0].b64_json)
+    img = Image.open(BytesIO(image_bytes)).convert("RGB")
+    img = _to_16_9(img)
+    img.save(output_path, "JPEG", quality=92)
     return output_path
