@@ -1,9 +1,25 @@
 """
-Завантаження відео у максимально можливій якості через yt-dlp.
+Завантаження відео у максимально можливій якості.
+
+Два незалежні шляхи, в такому порядку:
+1. Apify actor "epctex/youtube-video-downloader" (APIFY_API_TOKEN) — знімає з
+   рук нас проблему з YouTube anti-bot (запит іде з інфраструктури Apify, не
+   з датацентр-IP GitHub Actions), і не залежить від протухання cookies.
+   Free-план Apify дає $5/міс кредитів, але в документації актора згадано
+   окреме обмеження — можливо лише 2 запуски/міс на Free. Якщо впреться в
+   ліміт чи інша помилка — падаємо на запасний варіант нижче.
+2. yt-dlp + cookies + проксі (як було раніше) — запасний варіант, якщо Apify
+   не налаштовано (немає токена) або впав з помилкою.
 """
 
 import os
 import subprocess
+
+import requests
+
+APIFY_TOKEN_ENV_VAR = "APIFY_API_TOKEN"
+APIFY_ACTOR_ID = "epctex~youtube-video-downloader"
+APIFY_QUALITY = "1080"
 
 # YouTube блокує завантаження з датацентр-IP (GitHub Actions) як "підозрілі"
 # ("Sign in to confirm you're not a bot") — незалежно від того, наскільки
@@ -20,6 +36,43 @@ COOKIES_PATH = "/tmp/yt_cookies.txt"
 PROXY_ENV_VAR = "YT_DLP_PROXY_URL"
 
 
+def _download_via_apify(video_url: str, output_dir: str, video_id: str) -> str:
+    """Тягне відео через Apify actor. Кидає виняток при будь-якій помилці —
+    виклик (download_video) сам вирішує, чи падати на yt-dlp."""
+    token = os.environ[APIFY_TOKEN_ENV_VAR]
+    run_url = f"https://api.apify.com/v2/actors/{APIFY_ACTOR_ID}/run-sync-get-dataset-items"
+
+    resp = requests.post(
+        run_url,
+        headers={"Authorization": f"Bearer {token}"},
+        json={"startUrls": [video_url], "quality": APIFY_QUALITY, "storageType": "apify"},
+        timeout=600,
+    )
+    resp.raise_for_status()
+    items = resp.json()
+    if not items:
+        raise RuntimeError("Apify actor не повернув жодного результату")
+
+    item = items[0]
+    if item.get("status") != "succeeded":
+        raise RuntimeError(f"Apify actor повернув статус {item.get('status')!r}: {item}")
+
+    file_url = (item.get("output") or {}).get("url")
+    if not file_url:
+        raise RuntimeError(f"Apify actor не повернув output.url: {item}")
+
+    output_path = os.path.join(output_dir, f"{video_id}.mp4")
+    with requests.get(file_url, stream=True, timeout=600) as file_resp:
+        file_resp.raise_for_status()
+        with open(output_path, "wb") as f:
+            for chunk in file_resp.iter_content(chunk_size=1024 * 1024):
+                f.write(chunk)
+
+    print(f"[apify] Завантажено через Apify actor (якість {APIFY_QUALITY}p, "
+          f"вартість ${item.get('totalCost', '?')})")
+    return output_path
+
+
 def _prepare_cookies_file() -> str | None:
     """Пише cookies з env у тимчасовий файл. Повертає шлях або None, якщо секрет не заданий."""
     cookies_content = os.environ.get(COOKIES_ENV_VAR)
@@ -30,12 +83,11 @@ def _prepare_cookies_file() -> str | None:
     return COOKIES_PATH
 
 
-def download_video(video_url: str, output_dir: str, video_id: str) -> str:
+def _download_via_ytdlp(video_url: str, output_dir: str, video_id: str) -> str:
     """
-    Завантажує відео та повертає шлях до файлу.
+    Завантажує відео через yt-dlp та повертає шлях до файлу.
     Формат: найкраща доступна відео+аудіо доріжка, злиті в mp4.
     """
-    os.makedirs(output_dir, exist_ok=True)
     output_template = os.path.join(output_dir, f"{video_id}.%(ext)s")
 
     cmd = [
@@ -68,6 +120,19 @@ def download_video(video_url: str, output_dir: str, video_id: str) -> str:
         raise RuntimeError(f"Файл не знайдено після завантаження: {expected_path}")
 
     return expected_path
+
+
+def download_video(video_url: str, output_dir: str, video_id: str) -> str:
+    """Завантажує відео. Спершу Apify (якщо є токен), при помилці — yt-dlp."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    if os.environ.get(APIFY_TOKEN_ENV_VAR):
+        try:
+            return _download_via_apify(video_url, output_dir, video_id)
+        except Exception as e:
+            print(f"[apify] Не вдалось завантажити через Apify, падаю на yt-dlp: {e}")
+
+    return _download_via_ytdlp(video_url, output_dir, video_id)
 
 
 def transcode_smaller(input_path: str, output_path: str, max_height: int = 1080,
