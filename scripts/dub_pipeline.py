@@ -20,9 +20,11 @@ GPT-переклад тексту + Inworld TTS), бо кожен компоне
 - Українську мову Inworld офіційно підтверджує лише як "ймовірно
   experimental" (не в списку GA-мов) — якість клонування голосу з
   українського джерела не гарантована.
-- Тайм-стрейч через ffmpeg atempo підганяє тривалість репліки під оригінал,
-  але за екстремальних відхилень (дуже стисла репліка) мова може звучати
-  прискорено/уповільнено помітно на слух.
+- Озвучення йде не по одному сегменту Whisper, а кусками ~15 с
+  (_group_segments), і темп тайм-стрейчу обмежений клемпом
+  MAX_SLOWDOWN..MAX_SPEEDUP. Через це синхронність із картинкою
+  приблизна (±частка секунди) — свідомий розмін заради того, щоб мова не
+  тараторила і не жувалась. Ліп-синку тут усе одно немає.
 """
 
 import base64
@@ -219,6 +221,61 @@ def translate_segments(client: OpenAI, segments: list[dict], target_language: st
     return translations
 
 
+# Whisper ріже мову по паузах, тож один сегмент — це зазвичай одне коротке
+# речення (1-3 с). Озвучувати такими шматками погано з двох причин:
+# 1) іспанський переклад майже завжди довший за російський оригінал, і на
+#    короткому сегменті тайм-стрейч мусить тиснути сильно — на слух це
+#    "тараторення"; там, де переклад вийшов коротшим, навпаки розтягує — і
+#    це "жування". На довшому куску надлишок і недостача сусідніх реплік
+#    взаємно гасяться, і коефіцієнт тримається біля 1.0;
+# 2) TTS на кожному шматку заново будує інтонацію з нуля, тож мова звучить
+#    рублено, без наскрізної фрази.
+# Ціна: синхронність із картинкою стає приблизною (±частка секунди).
+# Ліп-синку тут все одно немає, тож це прийнятний розмін.
+CHUNK_TARGET_SECONDS = 15.0
+CHUNK_MAX_SECONDS = 22.0
+# Пауза, довша за це, — природна межа думки; рвати там безпечно.
+CHUNK_BREAK_GAP = 0.6
+# А пауза, довша за це, — межа сцени; рвемо завжди, інакше кусок проковтне
+# довгу тишу і вся арифметика тривалості попливе.
+CHUNK_FORCE_GAP = 2.0
+
+
+def _group_segments(segments: list[dict],
+                    target_seconds: float = CHUNK_TARGET_SECONDS,
+                    max_seconds: float = CHUNK_MAX_SECONDS,
+                    break_gap: float = CHUNK_BREAK_GAP,
+                    force_gap: float = CHUNK_FORCE_GAP) -> list[dict]:
+    """Склеює сусідні сегменти Whisper у куски ~target_seconds.
+
+    Розрив робиться лише в природних місцях: на достатньо довгій паузі
+    після того, як кусок уже набрав цільову довжину, або примусово — на
+    довгій тиші чи при перевищенні max_seconds.
+    """
+    chunks: list[dict] = []
+    current: dict | None = None
+
+    for seg in segments:
+        if current is None:
+            current = dict(seg)
+            continue
+
+        gap = seg["start"] - current["end"]
+        span = seg["end"] - current["start"]
+        filled = current["end"] - current["start"]
+
+        if gap >= force_gap or span > max_seconds or (filled >= target_seconds and gap >= break_gap):
+            chunks.append(current)
+            current = dict(seg)
+        else:
+            current["end"] = seg["end"]
+            current["text"] = f"{current['text']} {seg['text']}".strip()
+
+    if current is not None:
+        chunks.append(current)
+    return chunks
+
+
 def _build_voice_reference(wav_path: str, segments: list[dict], out_path: str) -> str:
     """Вирізає ~6-14с чистої мови з початку для voice cloning. Повертає транскрипт цього шматка."""
     start = segments[0]["start"]
@@ -332,8 +389,8 @@ def _apply_fade(pcm_bytes: bytes, fade_ms: float = FADE_MS) -> bytes:
 
     Без цього кожен сегмент вставляється в тишу (чи впритул до сусіднього
     сегмента) з різким стрибком амплітуди на межі — звідси чутний
-    клік/щиглик між репліками. Особливо критично там, де _fit_to_duration
-    обрізає хвилю (не в нулі) при стисканні під тайм-стрейч.
+    клік/щиглик між репліками. Особливо критично там, де сусідні куски
+    стикуються впритул, без паузи між ними.
     """
     fade_samples = min(int(SAMPLE_RATE * fade_ms / 1000), len(pcm_bytes) // 2 // 2)
     if fade_samples <= 0:
@@ -352,57 +409,99 @@ def _apply_fade(pcm_bytes: bytes, fade_ms: float = FADE_MS) -> bytes:
     return bytes(samples)
 
 
-def _fit_to_duration(pcm_bytes: bytes, target_duration: float, work_dir: str, tag: str) -> bytes:
-    """Тайм-стрейч синтезованого сегмента під точну тривалість оригінальної репліки."""
-    target_samples = max(1, round(target_duration * SAMPLE_RATE))
+# Межі тайм-стрейчу. За ними синтез перестає звучати як жива мова:
+# стиснення понад ~1.15x чути як тараторення, розтягнення нижче ~0.92x — як
+# жування. Раніше клемпа не було взагалі, тож на невдалому сегменті ffmpeg
+# отримував коефіцієнт 1.6+ і результат був саме такий, як описав
+# користувач. Краще розійтися з таймкодом оригіналу, ніж зіпсувати звук.
+MAX_SPEEDUP = 1.15
+MAX_SLOWDOWN = 0.92
 
+
+def _fit_to_duration(pcm_bytes: bytes, target_duration: float, work_dir: str, tag: str) -> bytes:
+    """Підганяє тривалість сегмента під target_duration у межах клемпа.
+
+    На відміну від попередньої версії НЕ обрізає хвіст: якщо після
+    дозволеного стиснення кусок усе одно довший за ціль — повертається
+    довшим. Обрізання по target_samples гарантовано з'їдало кінець фрази.
+    Вирівнювання позиції — задача _assemble_dubbed_track.
+    """
     current_duration = len(pcm_bytes) / 2 / SAMPLE_RATE
     if current_duration <= 0:
-        return b"\x00\x00" * target_samples
+        return b""
+    if target_duration <= 0:
+        return pcm_bytes
 
     factor = current_duration / target_duration
-    # Майже без розтягування - не ганяємо через ffmpeg дарма.
-    if 0.97 <= factor <= 1.03:
-        stretched = pcm_bytes
-    else:
-        in_path = os.path.join(work_dir, f"{tag}_in.wav")
-        out_path = os.path.join(work_dir, f"{tag}_out.wav")
-        _write_wav(in_path, pcm_bytes)
-        _run_ffmpeg(
-            ["-i", in_path, "-filter:a", _atempo_chain(factor),
-             "-ar", str(SAMPLE_RATE), "-ac", "1", "-acodec", "pcm_s16le", out_path],
-            f"ffmpeg помилка atempo для {tag}",
-        )
-        stretched = _read_wav_frames(out_path)
-        for p in (in_path, out_path):
-            if os.path.exists(p):
-                os.remove(p)
+    clamped = min(max(factor, MAX_SLOWDOWN), MAX_SPEEDUP)
+    if abs(clamped - factor) > 0.01:
+        print(f"[dub] {tag}: для точного тайму треба темп {factor:.2f}x, "
+              f"обмежено до {clamped:.2f}x")
 
-    stretched_samples = len(stretched) // 2
-    if stretched_samples >= target_samples:
-        return stretched[: target_samples * 2]
-    return stretched + b"\x00\x00" * (target_samples - stretched_samples)
+    # Майже без розтягування - не ганяємо через ffmpeg дарма.
+    if 0.97 <= clamped <= 1.03:
+        return pcm_bytes
+
+    in_path = os.path.join(work_dir, f"{tag}_in.wav")
+    out_path = os.path.join(work_dir, f"{tag}_out.wav")
+    _write_wav(in_path, pcm_bytes)
+    _run_ffmpeg(
+        ["-i", in_path, "-filter:a", _atempo_chain(clamped),
+         "-ar", str(SAMPLE_RATE), "-ac", "1", "-acodec", "pcm_s16le", out_path],
+        f"ffmpeg помилка atempo для {tag}",
+    )
+    stretched = _read_wav_frames(out_path)
+    for p in (in_path, out_path):
+        if os.path.exists(p):
+            os.remove(p)
+    return stretched
 
 
 def _assemble_dubbed_track(api_key: str, voice_id: str, segments: list[dict],
                             translations: list[str], total_duration: float,
                             out_wav_path: str, work_dir: str, target_language: str) -> None:
-    buffer = bytearray()
-    cursor = 0.0
+    """Збирає доріжку, рахуючи позицію за реально записаним аудіо.
 
-    for i, (seg, text) in enumerate(zip(segments, translations)):
-        gap = seg["start"] - cursor
-        if gap > 0:
-            buffer += b"\x00\x00" * round(gap * SAMPLE_RATE)
+    Раніше cursor просто стрибав на seg["end"], бо кожен сегмент силоміць
+    підганявся під точну тривалість оригіналу (з обрізанням хвоста). Тепер
+    сегмент може вийти довшим за свій таймкод, тож позиція рахується за
+    довжиною буфера: якщо ми відстаємо, наступна репліка починається одразу
+    і з'їдає паузу, замість того щоб тиснути темп.
+    """
+    buffer = bytearray()
+    pairs = list(zip(segments, translations))
+
+    for i, (seg, text) in enumerate(pairs):
+        written = len(buffer) / 2 / SAMPLE_RATE
+        if seg["start"] > written:
+            buffer += b"\x00\x00" * round((seg["start"] - written) * SAMPLE_RATE)
 
         raw = _synthesize_segment(api_key, text, voice_id, target_language)
-        fitted = _fit_to_duration(raw, seg["end"] - seg["start"], work_dir, f"seg{i}")
-        buffer += _apply_fade(fitted)
-        cursor = seg["end"]
-        print(f"[dub] сегмент {i + 1}/{len(segments)} озвучено")
 
-    if cursor < total_duration:
-        buffer += b"\x00\x00" * round((total_duration - cursor) * SAMPLE_RATE)
+        start = max(seg["start"], written)
+        # Скільки часу реально є до початку наступної репліки — паузу між
+        # репліками краще витратити на мову, ніж тиснути темп.
+        next_start = pairs[i + 1][0]["start"] if i + 1 < len(pairs) else total_duration
+        available = max(next_start - start, 0.0)
+
+        own = max(seg["end"] - start, 0.3)
+        raw_duration = len(raw) / 2 / SAMPLE_RATE
+        # Коротший за свій таймкод — тягнемо до таймкоду (в межах клемпа).
+        # Довший — дозволяємо залізти в паузу, і лише за нею стискаємо.
+        target = own if raw_duration <= own else min(raw_duration, max(own, available))
+
+        fitted = _fit_to_duration(raw, target, work_dir, f"chunk{i}")
+        buffer += _apply_fade(fitted)
+        print(f"[dub] кусок {i + 1}/{len(pairs)} озвучено")
+
+    written = len(buffer) / 2 / SAMPLE_RATE
+    if written < total_duration:
+        buffer += b"\x00\x00" * round((total_duration - written) * SAMPLE_RATE)
+    elif written > total_duration + 0.5:
+        # -shortest у _mux обріже хвіст по довжині відео. Логуємо, щоб таке
+        # сповзання було видно в логах прогону, а не лише на слух.
+        print(f"[dub][WARN] доріжка довша за відео на {written - total_duration:.1f} с — "
+              f"кінець буде обрізано під довжину відеоряду")
 
     _write_wav(out_wav_path, bytes(buffer))
 
@@ -433,7 +532,12 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
         raise DubError("Whisper не розпізнав жодного сегмента мови у відео")
     print(f"[dub] Whisper: мова={language}, сегментів={len(segments)}")
 
-    translations = translate_segments(openai_client, segments, target_language)
+    chunks = _group_segments(segments)
+    avg = sum(c["end"] - c["start"] for c in chunks) / len(chunks)
+    print(f"[dub] сегменти згруповано: {len(segments)} -> {len(chunks)} кусків "
+          f"(середня довжина {avg:.1f} с)")
+
+    translations = translate_segments(openai_client, chunks, target_language)
 
     ref_path = os.path.join(work_dir, f"{video_id}_voice_ref.wav")
     ref_transcript = _build_voice_reference(audio_path, segments, ref_path)
@@ -458,7 +562,7 @@ def translate_video(openai_client: OpenAI, inworld_api_key: str, video_path: str
 
     total_duration = _ffprobe_duration(video_path)
     dubbed_wav_path = os.path.join(work_dir, f"{video_id}_dubbed_audio.wav")
-    _assemble_dubbed_track(inworld_api_key, voice_id, segments, translations,
+    _assemble_dubbed_track(inworld_api_key, voice_id, chunks, translations,
                             total_duration, dubbed_wav_path, work_dir, target_language)
 
     output_path = os.path.join(work_dir, f"{video_id}_es.mp4")
