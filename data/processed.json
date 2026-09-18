@@ -1573,5 +1573,31 @@
     "created_at": "2026-09-18T04:12:36.456723+00:00",
     "updated_at": "2026-09-18T04:12:36.460606+00:00",
     "es_video_id": "E9BlrwS5jbA"
+  },
+  "Zew2TL7icA8": {
+    "status": "published",
+    "title_original": "ТОЛЬКО ЧТО! Москве прийдется не сладко! НОВЫЕ РАКЕТЫ ВСУ ВРЫВАЮТСЯ!",
+    "duration_seconds": 252,
+    "heygen_job_id": "inworld-dub",
+    "es_title": "¡ÚLTIMA HORA! Moscú bajo amenaza: ¡NUEVOS MISILES UCRANIANOS EN ACCIÓN!",
+    "es_description": "Impactante avance en la guerra: Ucrania despliega nuevas y poderosas armas que podrían cambiar el rumbo del conflicto. Moscú enfrenta un desafío sin precedentes. ¿Cómo responderá Rusia ante esta amenaza? Descubre todos los detalles aquí. #Ucrania #Rusia #GuerraUcrania #Misiles",
+    "es_tags": [
+      "Ucrania",
+      "Rusia",
+      "guerra en Ucrania",
+      "misiles ucranianos",
+      "nuevas armas",
+      "bombardeo Moscú",
+      "noticias de guerra",
+      "conflicto Rusia Ucrania",
+      "última hora",
+      "impactante",
+      "defensa Moscú",
+      "rompe noticias"
+    ],
+    "thumbnail_path": "data/thumbnails/Zew2TL7icA8.jpg",
+    "created_at": "2026-09-18T07:23:56.498989+00:00",
+    "updated_at": "2026-09-18T07:23:56.502683+00:00",
+    "es_video_id": "pNnCP3r_c9I"
   }
 }
