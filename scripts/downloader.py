@@ -40,6 +40,37 @@ def _prepare_cookies_file() -> str | None:
     return COOKIES_PATH
 
 
+# Драбинка стратегій. Одна спроба з дефолтними налаштуваннями більше не
+# працює стабільно: YouTube віддає частину форматів лише за наявності
+# PO-токена (yt-dlp не вміє генерувати їх сам), і поведінка залежить від
+# того, яким player_client представитись. Тому пробуємо по черзі, доки
+# якась не спрацює, і логуємо, котра саме — щоб потім лишити робочу.
+DOWNLOAD_STRATEGIES = [
+    ("default", []),
+    ("tv", ["--extractor-args", "youtube:player_client=tv"]),
+    ("web_safari+impersonate", ["--extractor-args", "youtube:player_client=web_safari",
+                                 "--impersonate", "chrome"]),
+    ("android_vr", ["--extractor-args", "youtube:player_client=android_vr"]),
+]
+
+
+def _egress_ip(proxy_url: str | None) -> str:
+    """Зовнішній IP, яким нас бачить інтернет (через проксі, якщо він є).
+
+    Навіщо: YouTube прив'язує підписане посилання на медіа до IP, який це
+    посилання запитав. Якщо проксі міняє IP між отриманням посилання і
+    завантаженням (а тарифи з "automatic IP replacement" саме так і
+    роблять), отримуємо 403 на стадії завантаження при цілком успішному
+    витяганні метаданих. Логуємо IP до і після, щоб це було видно.
+    """
+    try:
+        import requests
+        proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
+        return requests.get("https://api.ipify.org", proxies=proxies, timeout=20).text.strip()
+    except Exception as e:
+        return f"(не вдалось визначити: {e})"
+
+
 def download_video(video_url: str, output_dir: str, video_id: str) -> str:
     """
     Завантажує відео та повертає шлях до файлу.
@@ -48,26 +79,53 @@ def download_video(video_url: str, output_dir: str, video_id: str) -> str:
     os.makedirs(output_dir, exist_ok=True)
     output_template = os.path.join(output_dir, f"{video_id}.%(ext)s")
 
-    cmd = [
+    base_cmd = [
         "yt-dlp",
         "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
+        # Проксі-тунель майже завжди IPv4; без цього yt-dlp може піти по
+        # IPv6 повз тунель і показати YouTube зовсім інший IP.
+        "--force-ipv4",
         "-o", output_template,
     ]
 
     cookies_path = _prepare_cookies_file()
     if cookies_path:
-        cmd += ["--cookies", cookies_path]
+        base_cmd += ["--cookies", cookies_path]
 
     proxy_url = os.environ.get(PROXY_ENV_VAR)
     if proxy_url:
-        cmd += ["--proxy", proxy_url]
+        base_cmd += ["--proxy", proxy_url]
 
-    cmd.append(video_url)
+    ip_before = _egress_ip(proxy_url)
+    print(f"[downloader] зовнішній IP перед завантаженням: {ip_before}")
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"yt-dlp помилка для {video_url}:\n{result.stderr}")
+    errors = []
+    result = None
+    for name, extra in DOWNLOAD_STRATEGIES:
+        print(f"[downloader] спроба: {name}")
+        result = subprocess.run(base_cmd + extra + [video_url],
+                                 capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"[downloader] спрацювала стратегія: {name}")
+            break
+        tail = (result.stderr or "").strip().splitlines()
+        errors.append(f"--- {name}: " + (" | ".join(tail[-3:]) if tail else "без stderr"))
+        print(f"[downloader] {name} не вдалась")
+
+    if result is None or result.returncode != 0:
+        ip_after = _egress_ip(proxy_url)
+        note = ""
+        if ip_before != ip_after:
+            note = (f"\nУВАГА: зовнішній IP змінився під час спроб "
+                    f"({ip_before} -> {ip_after}). YouTube прив'язує підписані "
+                    f"посилання на медіа до IP — при плаваючому IP 403 на "
+                    f"завантаженні неминучий. Потрібен проксі зі справді "
+                    f"статичним IP, без automatic IP replacement.")
+        raise RuntimeError(
+            f"yt-dlp помилка для {video_url} — не спрацювала жодна з "
+            f"{len(DOWNLOAD_STRATEGIES)} стратегій:\n" + "\n".join(errors) + note
+        )
 
     expected_path = os.path.join(output_dir, f"{video_id}.mp4")
     if not os.path.exists(expected_path):
