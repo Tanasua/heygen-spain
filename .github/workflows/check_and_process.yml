@@ -14,6 +14,11 @@ on:
         description: "Ліміт кількості нових відео за цей запуск (0 = без ліміту)"
         type: string
         default: "0"
+      use_cookies:
+        description: "Передавати YOUTUBE_COOKIES у yt-dlp (false = тільки проксі)"
+        type: choice
+        options: ["true", "false"]
+        default: "true"
 
 permissions:
   contents: write
@@ -90,7 +95,14 @@ jobs:
         working-directory: scripts
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+          # YouTube ротує cookies сесії майже на кожну відповідь, а yt-dlp
+          # записує оновлений набір назад у файл. Раннер після прогону
+          # знищується, тож оновлення втрачається — і наступний запуск
+          # показує вже недійсні cookies (403). Через це свіжий експорт
+          # дає рівно одне успішне завантаження.
+          # use_cookies=false дозволяє перевірити, чи вистачає самого
+          # резидентного проксі: тоді ця ланка не потрібна взагалі.
+          YOUTUBE_COOKIES: ${{ (github.event_name == 'workflow_dispatch' && inputs.use_cookies == 'false') && '' || secrets.YOUTUBE_COOKIES }}
           # Резидентний/ISP-проксі для yt-dlp — без нього завантаження з
           # датацентр-IP GitHub Actions може впасти на "Sign in to confirm
           # you're not a bot" навіть зі свіжими cookies.
