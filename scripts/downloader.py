@@ -46,10 +46,14 @@ def _prepare_cookies_file() -> str | None:
 # того, яким player_client представитись. Тому пробуємо по черзі, доки
 # якась не спрацює, і логуємо, котра саме — щоб потім лишити робочу.
 DOWNLOAD_STRATEGIES = [
-    ("default", []),
-    ("tv", ["--extractor-args", "youtube:player_client=tv"]),
+    # Імперсонація йде першою: у прогоні #842 саме її радить документація
+    # від нашого 403, і саме вона тоді не змогла навіть стартувати через
+    # відсутній curl_cffi (тепер він у requirements.txt).
     ("web_safari+impersonate", ["--extractor-args", "youtube:player_client=web_safari",
                                  "--impersonate", "chrome"]),
+    ("default", []),
+    ("mweb", ["--extractor-args", "youtube:player_client=mweb"]),
+    ("tv", ["--extractor-args", "youtube:player_client=tv"]),
     ("android_vr", ["--extractor-args", "youtube:player_client=android_vr"]),
 ]
 

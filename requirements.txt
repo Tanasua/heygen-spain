@@ -5,6 +5,12 @@ google-auth-httplib2==0.2.0
 yt-dlp[default]==2026.7.4
 # Потрібен yt-dlp для роботи з socks5:// проксі (YT_DLP_PROXY_URL).
 PySocks==1.7.1
+# Потрібен для --impersonate: без нього yt-dlp падає з
+# 'Impersonate target "chrome" is not available'. Екстра [default] його НЕ
+# тягне — перевірено на реальному прогоні #842. Імперсонація потрібна, бо
+# частину форматів YouTube віддає лише клієнтам, схожим на справжній
+# браузер, інакше 403 на завантаженні медіа.
+curl_cffi==0.16.3
 requests==2.32.3
 # НЕ піднімати без перевірки: на openai>=2.0.0 виклик Whisper
 # (audio.transcriptions з whisper-1) починає віддавати 404 і весь дубляж
