@@ -1599,5 +1599,31 @@
     "created_at": "2026-09-18T07:23:56.498989+00:00",
     "updated_at": "2026-09-18T07:23:56.502683+00:00",
     "es_video_id": "pNnCP3r_c9I"
+  },
+  "XYsl-YOcdX0": {
+    "status": "published",
+    "title_original": "ЭТО СЛУЧИЛОСЬ! ВСУ официально подтвердили освобождение территорий на правом берегу Оскола!",
+    "duration_seconds": 257,
+    "heygen_job_id": "inworld-dub",
+    "es_title": "¡URGENTE! Ucrania CONFIRMA la LIBERACIÓN de territorios clave en Oskol",
+    "es_description": "¡IMPACTANTE avance! Las Fuerzas Armadas de Ucrania han confirmado oficialmente la liberación de territorios en la ribera derecha del río Oskol. ¿Qué significa esto para el curso de la guerra? Entérate de todos los detalles en nuestro informe especial. #Ucrania #ÚltimaHora #GuerraEnEuropa #NoticiasDeGuerra",
+    "es_tags": [
+      "Ucrania",
+      "Oskol",
+      "guerra en Ucrania",
+      "liberación de territorios",
+      "última hora",
+      "noticias de guerra",
+      "avance ucraniano",
+      "conflicto Rusia Ucrania",
+      "fuerzas armadas ucranianas",
+      "noticias internacionales",
+      "liberación confirmada",
+      "actualidad Ucrania"
+    ],
+    "thumbnail_path": "data/thumbnails/XYsl-YOcdX0.jpg",
+    "created_at": "2026-09-23T13:54:40.930810+00:00",
+    "updated_at": "2026-09-23T13:54:40.933199+00:00",
+    "es_video_id": "UN3kL0vxd0E"
   }
 }
