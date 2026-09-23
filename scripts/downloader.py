@@ -46,13 +46,16 @@ def _prepare_cookies_file() -> str | None:
 # того, яким player_client представитись. Тому пробуємо по черзі, доки
 # якась не спрацює, і логуємо, котра саме — щоб потім лишити робочу.
 DOWNLOAD_STRATEGIES = [
-    # Імперсонація йде першою: у прогоні #842 саме її радить документація
-    # від нашого 403, і саме вона тоді не змогла навіть стартувати через
-    # відсутній curl_cffi (тепер він у requirements.txt).
+    # mweb — єдина, що реально спрацювала (прогін #843, без cookies, через
+    # проксі), тож іде першою, щоб не марнувати час на завідомо мертві.
+    # ЗАСТЕРЕЖЕННЯ: mweb мобільний і може віддавати лише низькі формати —
+    # у #843 вийшло 14.2 MB там, де раніше було 59-83 MB. Тому нижче
+    # логується реальна висота кадру; якщо вона низька, треба шукати
+    # клієнта, який віддає 1080p.
+    ("mweb", ["--extractor-args", "youtube:player_client=mweb"]),
     ("web_safari+impersonate", ["--extractor-args", "youtube:player_client=web_safari",
                                  "--impersonate", "chrome"]),
     ("default", []),
-    ("mweb", ["--extractor-args", "youtube:player_client=mweb"]),
     ("tv", ["--extractor-args", "youtube:player_client=tv"]),
     ("android_vr", ["--extractor-args", "youtube:player_client=android_vr"]),
 ]
@@ -136,10 +139,33 @@ def download_video(video_url: str, output_dir: str, video_id: str) -> str:
         # На випадок іншого розширення після merge
         for fname in os.listdir(output_dir):
             if fname.startswith(video_id):
+                _log_resolution(os.path.join(output_dir, fname))
                 return os.path.join(output_dir, fname)
         raise RuntimeError(f"Файл не знайдено після завантаження: {expected_path}")
 
+    _log_resolution(expected_path)
     return expected_path
+
+
+def _log_resolution(path: str) -> None:
+    """Пише в лог реальну роздільну здатність завантаженого файлу.
+
+    Навіщо: різні player_client віддають різні набори форматів, і деякі
+    (зокрема мобільний mweb) можуть мовчки обмежити нас низькою якістю.
+    Розмір файлу про це не говорить однозначно, а висота кадру — так.
+    """
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0",
+             "-show_entries", "stream=width,height",
+             "-of", "csv=s=x:p=0", path],
+            capture_output=True, text=True, timeout=60,
+        ).stdout.strip()
+        height = int(out.split("x")[1]) if "x" in out else 0
+        flag = "" if height >= 720 else "  <-- НИЗЬКА ЯКІСТЬ"
+        print(f"[downloader] роздільна здатність: {out}{flag}")
+    except Exception as e:
+        print(f"[downloader] не вдалось визначити роздільну здатність: {e}")
 
 
 def transcode_smaller(input_path: str, output_path: str, max_height: int = 1080,
