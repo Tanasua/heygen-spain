@@ -1,5 +1,5 @@
 """
-Заливка готового відео на іспанський канал @AHORAMISMO-b5e через YouTube Data API v3.
+Заливка готового відео на цільовий (іспаномовний) канал через YouTube Data API v3.
 
 Використовує OAuth 2.0 refresh token (не Service Account — YouTube Data API
 для завантаження відео від імені каналу вимагає саме OAuth від власника каналу).

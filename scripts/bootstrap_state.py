@@ -10,6 +10,7 @@ processed.json. При першому запуску це означає до 5 
 
 Запуск (локально, один раз):
     export YOUTUBE_API_KEY=...
+    export SOURCE_CHANNEL_HANDLE=@...
     cd scripts && python bootstrap_state.py
 
 Після цього закомітьте data/processed.json у репозиторій.
@@ -22,7 +23,11 @@ import state_manager
 import youtube_monitor
 
 YT_API_KEY = os.environ["YOUTUBE_API_KEY"]
-SOURCE_CHANNEL_HANDLE = os.environ.get("SOURCE_CHANNEL_HANDLE", "@GlavredTV")
+SOURCE_CHANNEL_HANDLE = os.environ.get("SOURCE_CHANNEL_HANDLE", "").strip()
+if not SOURCE_CHANNEL_HANDLE:
+    raise RuntimeError(
+        "Не задано SOURCE_CHANNEL_HANDLE (хендл вихідного каналу, напр. \"@example\")."
+    )
 # Беремо із запасом, щоб нічого зі старого не проскочило.
 HOW_MANY = int(os.environ.get("BOOTSTRAP_COUNT", 10))
 

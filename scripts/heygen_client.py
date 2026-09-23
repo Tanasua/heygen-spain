@@ -27,7 +27,7 @@ class HeyGenError(RuntimeError):
 
 
 def submit_translation_job(api_key: str, video_url: str, target_language: str = "es",
-                            mode: str = DEFAULT_MODE, title: str = "GlavredTV -> ES") -> str:
+                            mode: str = DEFAULT_MODE, title: str = "auto-dub -> ES") -> str:
     """
     Надсилає відео на переклад. video_url має бути публічно доступним
     (HeyGen сам його завантажить — перевірте, що лінк відкривається в

@@ -1,6 +1,7 @@
 """
-Генерація іспанського title/description/тегів для завантаженого відео,
-у стилі каналу @AHORAMISMO (клікбейт, war-news формат).
+Генерація іспанського title/description/тегів для завантаженого відео
+у клікбейтному war-news форматі, характерному для іспаномовних каналів
+термінових новин.
 """
 
 import json
@@ -9,9 +10,9 @@ from openai import OpenAI
 SYSTEM_PROMPT = """Eres un editor de un canal de YouTube de noticias sobre la guerra \
 en Ucrania, dirigido a audiencia hispanohablante. Tu estilo es clickbait pero \
 basado en hechos: títulos en mayúsculas parciales, con signos de exclamación, \
-palabras impactantes (URGENTE, ÚLTIMA HORA, IMPACTANTE), similar a canales \
-como "AHORA MISMO". Nunca inventes hechos que no estén en el título/descripción \
-original — solo adapta el tono y el idioma."""
+palabras impactantes (URGENTE, ÚLTIMA HORA, IMPACTANTE), al estilo de los \
+canales hispanohablantes de noticias de última hora. Nunca inventes hechos que \
+no estén en el título/descripción original — solo adapta el tono y el idioma."""
 
 USER_PROMPT_TEMPLATE = """Título original (ruso/ucraniano): {original_title}
 

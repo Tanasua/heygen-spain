@@ -36,7 +36,17 @@ import telegram_notifier
 
 # --- Конфігурація з env (GitHub Secrets) ---
 YT_API_KEY = os.environ["YOUTUBE_API_KEY"]
-SOURCE_CHANNEL_HANDLE = os.environ.get("SOURCE_CHANNEL_HANDLE", "@GlavredTV")
+# Хендл вихідного каналу свідомо НЕ має дефолту в коді: репозиторій не
+# повинен називати конкретні канали. Значення приходить з GitHub Variable
+# SOURCE_CHANNEL_HANDLE (Settings -> Secrets and variables -> Actions ->
+# Variables), локально — зі змінної оточення.
+SOURCE_CHANNEL_HANDLE = os.environ.get("SOURCE_CHANNEL_HANDLE", "").strip()
+if not SOURCE_CHANNEL_HANDLE:
+    raise RuntimeError(
+        "Не задано SOURCE_CHANNEL_HANDLE (хендл вихідного каналу, напр. "
+        "\"@example\"). У GitHub Actions задається через Variables, "
+        "локально — через змінну оточення."
+    )
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
