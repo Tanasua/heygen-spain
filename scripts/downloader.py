@@ -11,6 +11,14 @@ import subprocess
 COOKIES_ENV_VAR = "YOUTUBE_COOKIES"
 COOKIES_PATH = "/tmp/yt_cookies.txt"
 
+# Вимикач cookies. Навіщо: YouTube ротує cookies сесії майже на кожну
+# відповідь, yt-dlp записує оновлений набір назад у файл, а раннер після
+# прогону знищується — тож оновлення втрачається, і наступний запуск
+# показує вже недійсні cookies (403). Через це один експорт дає рівно одне
+# успішне завантаження. Якщо резидентного проксі достатньо самого по собі,
+# усю цю ланку можна прибрати.
+USE_COOKIES_ENV_VAR = "YOUTUBE_USE_COOKIES"
+
 # Резидентний/ISP-проксі — без нього навіть свіжі cookies не завжди рятують
 # від "Sign in to confirm you're not a bot" з датацентр-IP GitHub Actions.
 # Формат: http://user:pass@host:port або socks5://user:pass@host:port.
@@ -19,6 +27,11 @@ PROXY_ENV_VAR = "YT_DLP_PROXY_URL"
 
 def _prepare_cookies_file() -> str | None:
     """Пише cookies з env у тимчасовий файл. Повертає шлях або None, якщо секрет не заданий."""
+    if os.environ.get(USE_COOKIES_ENV_VAR, "true").strip().lower() == "false":
+        print("[downloader] cookies вимкнено (YOUTUBE_USE_COOKIES=false) — "
+              "йду лише через проксі")
+        return None
+
     cookies_content = os.environ.get(COOKIES_ENV_VAR)
     if not cookies_content:
         return None

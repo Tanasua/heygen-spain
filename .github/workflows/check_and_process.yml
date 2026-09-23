@@ -57,7 +57,7 @@ jobs:
             total=$((total + count))
           done
           echo "Разом запусків пайплайну сьогодні (включно з цим): $total"
-          if [ "$total" -gt 8 ]; then
+          if [ "$total" -gt 12 ]; then
             echo "Ліміт запусків/добу на весь пайплайн вичерпано — пропускаю обробку до завтра (UTC)."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
@@ -102,7 +102,12 @@ jobs:
           # дає рівно одне успішне завантаження.
           # use_cookies=false дозволяє перевірити, чи вистачає самого
           # резидентного проксі: тоді ця ланка не потрібна взагалі.
-          YOUTUBE_COOKIES: ${{ (github.event_name == 'workflow_dispatch' && inputs.use_cookies == 'false') && '' || secrets.YOUTUBE_COOKIES }}
+          # УВАГА: НЕ гасити cookies виразом "умова && '' || secrets.X" —
+          # порожній рядок у GitHub Actions хибний, тож такий вираз ЗАВЖДИ
+          # повертає secrets.X. Тому тут окремий прапорець нижче, який
+          # перевіряє сам downloader.py.
+          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+          YOUTUBE_USE_COOKIES: ${{ github.event_name == 'workflow_dispatch' && inputs.use_cookies || 'true' }}
           # Резидентний/ISP-проксі для yt-dlp — без нього завантаження з
           # датацентр-IP GitHub Actions може впасти на "Sign in to confirm
           # you're not a bot" навіть зі свіжими cookies.
