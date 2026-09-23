@@ -276,18 +276,65 @@ def _group_segments(segments: list[dict],
     return chunks
 
 
+# Скільки початку відео ігнорувати при виборі зразка голосу. Там майже
+# завжди заставка, музична підводка або короткий вступ іншим голосом —
+# саме через це клон міг вийти чужим (чоловік заговорив жіночим голосом).
+VOICE_REF_SKIP_INTRO_SECONDS = float(os.environ.get("VOICE_REF_SKIP_INTRO_SECONDS", "25"))
+# Пауза, довша за це, вважається межею між репліками різних людей або
+# між студією і відеовставкою.
+VOICE_REF_MAX_GAP = 1.0
+# Ручний перехоплювач: якщо евристика все одно вибрала не того, можна
+# вказати секунду, з якої різати зразок (env для конкретного прогону).
+VOICE_REF_START_OVERRIDE = os.environ.get("VOICE_REF_START_SECONDS", "").strip()
+
+
+def _longest_speech_run(segments: list[dict], skip_intro: float) -> list[dict]:
+    """Найдовший безперервний фрагмент мови без великих пауз.
+
+    Це найкраще наближення до "основного диктора", яке можна зробити без
+    повноцінної діаризації: людина, що говорить у студії довше за всіх
+    поспіль, майже завжди і є ведучим, а вставки та коментарі інших людей
+    короткі й відокремлені паузами.
+    """
+    candidates = [s for s in segments if s["start"] >= skip_intro] or segments
+
+    runs: list[list[dict]] = [[candidates[0]]]
+    for seg in candidates[1:]:
+        if seg["start"] - runs[-1][-1]["end"] > VOICE_REF_MAX_GAP:
+            runs.append([seg])
+        else:
+            runs[-1].append(seg)
+
+    return max(runs, key=lambda r: r[-1]["end"] - r[0]["start"])
+
+
 def _build_voice_reference(wav_path: str, segments: list[dict], out_path: str) -> str:
-    """Вирізає ~6-14с чистої мови з початку для voice cloning. Повертає транскрипт цього шматка."""
-    start = segments[0]["start"]
+    """Вирізає ~6-14 с чистої мови основного диктора для voice cloning.
+
+    Раніше бралися просто перші секунди відео. На новинному матеріалі це
+    систематично промахується: початок — це заставка, підводка або інший
+    голос, і клон виходив не того, хто веде випуск.
+    """
+    if VOICE_REF_START_OVERRIDE:
+        run = [s for s in segments if s["end"] > float(VOICE_REF_START_OVERRIDE)] or segments
+        print(f"[dub] зразок голосу: ручний старт з {VOICE_REF_START_OVERRIDE} с")
+    else:
+        run = _longest_speech_run(segments, VOICE_REF_SKIP_INTRO_SECONDS)
+
+    start = run[0]["start"]
     end = start
     used_texts = []
-    for seg in segments:
+    for seg in run:
         if seg["start"] - start > VOICE_REF_MAX_SECONDS:
             break
         end = seg["end"]
         used_texts.append(seg["text"])
         if end - start >= VOICE_REF_MIN_SECONDS:
             break
+
+    run_length = run[-1]["end"] - run[0]["start"]
+    print(f"[dub] зразок голосу: {start:.1f}-{end:.1f} с "
+          f"(з безперервного фрагмента {run_length:.1f} с, реплік у ньому {len(run)})")
 
     _run_ffmpeg(
         ["-i", wav_path, "-ss", str(start), "-to", str(end),
@@ -415,7 +462,12 @@ def _apply_fade(pcm_bytes: bytes, fade_ms: float = FADE_MS) -> bytes:
 # отримував коефіцієнт 1.6+ і результат був саме такий, як описав
 # користувач. Краще розійтися з таймкодом оригіналу, ніж зіпсувати звук.
 MAX_SPEEDUP = 1.15
-MAX_SLOWDOWN = 0.92
+# Розширено з 0.92: у прогоні #844 понад 40 кусків із 63 потребували темпу
+# 0.63-0.90 і впирались у клемп, тобто синтез систематично коротший за
+# оригінальну репліку — і різниця лишалась тишею. 0.85 дозволяє розтягнути
+# трохи більше, не доводячи мову до "жування". Решту різниці прикриває
+# фонова оригінальна доріжка (див. ORIGINAL_BED_VOLUME).
+MAX_SLOWDOWN = 0.85
 
 
 def _fit_to_duration(pcm_bytes: bytes, target_duration: float, work_dir: str, tag: str) -> bytes:
@@ -506,11 +558,35 @@ def _assemble_dubbed_track(api_key: str, voice_id: str, segments: list[dict],
     _write_wav(out_wav_path, bytes(buffer))
 
 
+# Гучність оригінальної доріжки під дубляжем. 0.12 ≈ -18 dB: оригінал
+# чутно як фон, але він не конкурує з перекладом.
+#
+# Навіщо взагалі лишати оригінал:
+# 1) Там, де синтез коротший за репліку (а це більшість кусків — темп
+#    постійно впирається в MAX_SLOWDOWN), раніше лишалась мертва тиша.
+#    Тепер у цих проміжках чутно оригінал, і паузи перестають звучати як
+#    обрив звуку.
+# 2) Зберігається атмосфера: інтершум, музика, звуки подій у відеовставках,
+#    які інакше зникали разом з оригінальною доріжкою.
+ORIGINAL_BED_VOLUME = float(os.environ.get("ORIGINAL_BED_VOLUME", "0.12"))
+
+
 def _mux(video_path: str, dubbed_wav_path: str, out_video_path: str) -> None:
+    """Склеює відеоряд з дубляжем, підмішуючи оригінальне аудіо тихим фоном.
+
+    normalize=0 обов'язковий: за замовчуванням amix ділить гучність на
+    кількість входів, і дубляж став би вдвічі тихішим.
+    """
+    filter_complex = (
+        f"[0:a]volume={ORIGINAL_BED_VOLUME}[bg];"
+        f"[1:a]volume=1.0[fg];"
+        f"[bg][fg]amix=inputs=2:duration=first:normalize=0[aout]"
+    )
     _run_ffmpeg(
         ["-i", video_path, "-i", dubbed_wav_path,
-         "-map", "0:v:0", "-map", "1:a:0",
-         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+         "-filter_complex", filter_complex,
+         "-map", "0:v:0", "-map", "[aout]",
+         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
          "-shortest", out_video_path],
         "ffmpeg помилка склейки фінального відео",
     )
