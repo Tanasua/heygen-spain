@@ -39,7 +39,7 @@ jobs:
     outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
-      - name: Порахувати запуски пайплайну за сьогодні (UTC) і застосувати ліміт 8/добу (ТИМЧАСОВО, повернути на 5)
+      - name: Порахувати запуски пайплайну за сьогодні (UTC) і застосувати ліміт 5/добу
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
             total=$((total + count))
           done
           echo "Разом запусків пайплайну сьогодні (включно з цим): $total"
-          if [ "$total" -gt 12 ]; then
+          if [ "$total" -gt 5 ]; then
             echo "Ліміт запусків/добу на весь пайплайн вичерпано — пропускаю обробку до завтра (UTC)."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
