@@ -1781,5 +1781,56 @@
     "created_at": "2026-09-24T01:22:43.998727+00:00",
     "updated_at": "2026-09-24T01:22:44.002514+00:00",
     "es_video_id": "d-AtuVAJHkQ"
+  },
+  "GPLUJ_OjdR0": {
+    "status": "published",
+    "title_original": "КРАХ БЛИЗКО! РФ ЖДЕТ ГОЛОД И ТОПЛИВНЫЙ КРИЗИС? Как рушится главное богатство Путина",
+    "duration_seconds": 914,
+    "heygen_job_id": "inworld-dub",
+    "es_title": "¡URGENTE! ¿RUSIA AL BORDE DEL COLAPSO? Hambre y crisis de combustible inminentes",
+    "es_description": "IMPACTANTE: El principal recurso de Putin se derrumba, poniendo a Rusia frente a una posible hambruna y un grave desabastecimiento de combustible. ¿Estamos por ver el mayor revés económico del Kremlin? Entérate de todo en este informe detallado. #Rusia #Putin #Crisis #Ucrania #ÚltimaHora",
+    "es_tags": [
+      "Rusia",
+      "Putin",
+      "crisis económica",
+      "guerra en Ucrania",
+      "colapso ruso",
+      "crisis de combustible",
+      "hambruna en Rusia",
+      "última hora",
+      "noticias de guerra",
+      "recursos energéticos",
+      "derrumbe económico"
+    ],
+    "thumbnail_path": "data/thumbnails/GPLUJ_OjdR0.jpg",
+    "created_at": "2026-09-24T06:04:44.005419+00:00",
+    "updated_at": "2026-09-24T06:04:44.008782+00:00",
+    "es_video_id": "GlzkjavixtQ"
+  },
+  "KaBQQNRh1uQ": {
+    "status": "published",
+    "title_original": "СРОЧНЫЕ ЗАЯВЛЕНИЕ ИЗ ООН! Лавров ОТКАЗАЛСЯ от ПЕРЕМИРИЯ?!",
+    "duration_seconds": 219,
+    "heygen_job_id": "inworld-dub",
+    "es_title": "¡URGENTE! LAVROV RECHAZA EL ALTO EL FUEGO EN LA ONU: ESCÁNDALO MUNDIAL",
+    "es_description": "¡Última hora desde la ONU! Sergey Lavrov sorprende al rechazar el cese al fuego en Ucrania. ¿Qué consecuencias traerá esta decisión para la paz mundial? Entérate de todos los detalles y reacciones internacionales aquí. #Ucrania #ONU #Lavrov #Guerra #ÚltimaHora",
+    "es_tags": [
+      "Lavrov",
+      "ONU",
+      "Ucrania",
+      "alto el fuego",
+      "guerra en Ucrania",
+      "noticias de última hora",
+      "Rusia",
+      "conflicto internacional",
+      "declaraciones ONU",
+      "crisis mundial",
+      "paz mundial",
+      "escándalo diplomático"
+    ],
+    "thumbnail_path": "data/thumbnails/KaBQQNRh1uQ.jpg",
+    "created_at": "2026-09-24T06:07:48.135176+00:00",
+    "updated_at": "2026-09-24T06:07:48.138548+00:00",
+    "es_video_id": "aGgUDEdm8fA"
   }
 }
