@@ -1,8 +1,12 @@
 name: Check & Process New Videos
 
 on:
-  schedule:
-    - cron: "*/30 * * * *"
+  # ПАЙПЛАЙН ЗУПИНЕНО на прохання власника (25.09.2026).
+  # Автоматичних запусків немає; workflow_dispatch лишається робочим, тож
+  # ручний прогін завжди можна зробити кнопкою Run workflow.
+  # Щоб відновити автоматику — просто розкоментувати два рядки нижче.
+  # schedule:
+  #   - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       dub_provider:
